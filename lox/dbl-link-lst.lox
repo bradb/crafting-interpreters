@@ -1,0 +1,169 @@
+class Node {
+  // Create a new node for a doubly-linked list. Parameters:
+  //
+  // val: The data for this Node.
+  init(val) {
+    this.prev = nil;
+    this.next = nil;
+    this.val = val;
+  }
+}
+
+class DoublyLinkedList {
+  init() {
+    this.first = nil;
+    this.last = nil;
+  }
+
+  push(val) {
+    var node = Node(val);
+
+    if (this.last == nil) {
+      this.first = node;
+      this.last = node;
+    } else {
+      node.prev = this.last;
+      this.last.next = node;
+      this.last = node;
+    }
+  }
+
+  // Pop an item from the list. Returns the value of the popped item.
+  //
+  // Returns nil if lst is empty.
+  pop() {
+    if (this.last != nil) {
+      var val = this.last.val;
+
+      if (this.first == this.last) {
+        this.first = nil;
+        this.last = nil;
+      } else {
+        this.last = this.last.prev;
+        this.last.next = nil;
+      }
+
+      return val;
+    }
+  }
+
+  // Remove the first item from the head of the list. Returns the val of the removed item.
+  //
+  // Returns nil if list is blank.
+  shift() {
+    if (this.first != nil) {
+      var val = this.first.val;
+
+      if (this.first == this.last) {
+        this.first = nil;
+        this.last = nil;
+      } else {
+        this.first = this.first.next;
+        this.first.prev = nil;
+      }
+
+      return val;
+    }
+  }
+
+  // Add an item to the beginning of the list.
+  unshift(val) {
+    var node = Node(val);
+
+    if (this.first == nil) {
+      this.first = node;
+      this.last = node;
+    } else {
+      this.first.prev = node;
+      node.next = this.first;
+      this.first = node;
+    }
+  }
+
+  // Return the length of the list
+  count() {
+    var n = 0;
+
+    for (var node = this.first; node != nil; node = node.next) {
+      n = n + 1;
+    }
+
+    return n;
+  }
+
+  // Delete the first node matching val
+  delete(val) {
+    for (var node = this.first; node != nil; node = node.next) {
+      if (node.val == val) {
+
+         var prev = node.prev;
+         var next = node.next;
+
+         if (prev != nil) {
+           prev.next = next;
+         }
+
+         if (next != nil) {
+           next.prev = prev;
+         }
+
+         return;
+      }
+    }
+  }
+
+  clear() {
+    this.first = nil;
+    this.last = nil;
+  }
+}
+
+fun assert(cond, msg) {
+    if (cond) {
+      print msg + ": " + "PASS";
+    } else {
+      print msg + ": " + "FAIL";
+    }
+}
+
+
+fun test() {
+  var val1 = 15;
+  var val2 = 99;
+  var val3 = 42;
+  var lst = DoublyLinkedList();
+
+  lst.push(val1);
+  assert(1 == lst.count(), "list count, one item");
+
+  lst.push(val2);
+  assert(2 == lst.count(), "list count, multiple items");
+
+  assert(15 == lst.shift(), "unshift");
+  assert(1 == lst.count(), "count after shift");
+
+  lst.unshift(val3);
+  assert(2 == lst.count(), "count after unshift");
+
+  assert(99 == lst.pop(), "pop");
+  assert(1 == lst.count(), "count after pop");
+
+  lst.clear();
+  assert(0 == lst.count(), "count after clear");
+
+  var lst2 = DoublyLinkedList();
+  lst2.push(val1);
+  lst2.push(val2);
+  lst2.push(val3);
+
+  assert(3 == lst2.count(), "count after multiple pushes");
+  lst2.delete(val2);
+
+  assert(2 == lst2.count(), "count after delete");
+}
+
+fun main() {
+  test();
+}
+
+main();
