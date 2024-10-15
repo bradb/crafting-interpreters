@@ -14,16 +14,16 @@
   [c line]
   (case c
     \(
-    (token ::left_paren (str c) nil line)
+    (token ::left-paren (str c) nil line)
 
     \)
-    (token ::right_paren (str c) nil line)
+    (token ::right-paren (str c) nil line)
 
     \{
-    (token ::left_brace (str c) nil line)
+    (token ::left-brace (str c) nil line)
 
     \}
-    (token ::right_brace (str c) nil line)
+    (token ::right-brace (str c) nil line)
 
     \,
     (token ::comma (str c) nil line)

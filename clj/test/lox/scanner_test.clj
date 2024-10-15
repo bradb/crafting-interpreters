@@ -3,10 +3,10 @@
              [lox.scanner :as s]))
 
 (deftest single-char-tokens-test
-  (is (= [(s/->Token ::s/left_paren "(" nil 1)] (s/scan "(")))
-  (is (= [(s/->Token ::s/right_paren ")" nil 1)] (s/scan ")")))
-  (is (= [(s/->Token ::s/left_brace "{" nil 1)] (s/scan "{")))
-  (is (= [(s/->Token ::s/right_brace "}" nil 1)] (s/scan "}")))
+  (is (= [(s/->Token ::s/left-paren "(" nil 1)] (s/scan "(")))
+  (is (= [(s/->Token ::s/right-paren ")" nil 1)] (s/scan ")")))
+  (is (= [(s/->Token ::s/left-brace "{" nil 1)] (s/scan "{")))
+  (is (= [(s/->Token ::s/right-brace "}" nil 1)] (s/scan "}")))
   (is (= [(s/->Token ::s/comma "," nil 1)] (s/scan ",")))
   (is (= [(s/->Token ::s/dot "." nil 1)] (s/scan ".")))
   (is (= [(s/->Token ::s/minus "-" nil 1)] (s/scan "-")))
@@ -15,8 +15,8 @@
   (is (= [(s/->Token ::s/star "*" nil 1)] (s/scan "*"))))
 
 (deftest multiple-single-tokens-test
-  (is (= [(s/->Token ::s/left_paren "(" nil 1)
-          (s/->Token ::s/right_paren ")" nil 1)]
+  (is (= [(s/->Token ::s/left-paren "(" nil 1)
+          (s/->Token ::s/right-paren ")" nil 1)]
          (s/scan "()")))
   (is (= [(s/->Token ::s/semicolon ";" nil 1)
           (s/->Token ::s/dot "." nil 1)
@@ -31,6 +31,12 @@
   (is false))
 
 (deftest number-literal-test
+  (is false))
+
+(deftest identifier-test
+  (is false))
+
+(deftest keyword-test
   (is false))
 
 (deftest mix-of-comments-and-ops-test
@@ -50,4 +56,7 @@
   (is false))
 
 (deftest track-token-line-test
+  (is false))
+
+(deftest parse-hello-world-test
   (is false))
