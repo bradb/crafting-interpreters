@@ -1,1 +1,3 @@
 *.~undo-tree~
+.cpcache/
+.nrepl-port
