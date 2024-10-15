@@ -2,6 +2,19 @@
 
 (defrecord Token [type lexeme literal line])
 
+(def ^:private single-char-lexemes
+  {\( ::left-paren
+   \) ::right-paren
+   \{ ::left-brace
+   \} ::right-brace
+   \, ::comma
+   \. ::dot
+   \; ::semicolon
+   \- ::minus
+   \+ ::plus
+   \* ::star})
+
+
 (defn- token
   [type s lexeme line]
   (Token. type s lexeme line))
@@ -13,54 +26,34 @@
 (defn- next-token
   [s line]
   (let [c (first s)
-        rem (rest s)
+        unscanned-str (rest s)]
+    (cond
+      (contains? single-char-lexemes c)
+      {:s unscanned-str, :line line, :token (token (get single-char-lexemes c) (str c) nil line)}
 
-        next-tkn
-        (case c
-          \(
-          (token ::left-paren (str c) nil line)
+      (= c \!)
+      (if (= \= (first unscanned-str))
+        {:s (rest unscanned-str), :line line, :token (token ::bang-equal "!=" nil line)}
+        {:s unscanned-str, :line line, :token (token ::bang (str c) nil line)})
 
-          \)
-          (token ::right-paren (str c) nil line)
+      (= c \=)
+      (if (= \= (first unscanned-str))
+        {:s (rest unscanned-str), :line line, :token (token ::equal-equal "==" nil line)}
+        {:s unscanned-str, :line line, :token (token ::equal (str c) nil line)})
 
-          \{
-          (token ::left-brace (str c) nil line)
+      (= c \<)
+      (if (= \= (first unscanned-str))
+        {:s (rest unscanned-str), :line line, :token (token ::less-equal "<=" nil line)}
+        {:s unscanned-str, :line line, :token (token ::less (str c) nil line)})
 
-          \}
-          (token ::right-brace (str c) nil line)
+      (= c \>)
+      (if (= \= (first unscanned-str))
+        {:s (rest unscanned-str), :line line, :token (token ::greater-equal ">=" nil line)}
+        {:s unscanned-str, :line line, :token (token ::greater (str c) nil line)})
 
-          \,
-          (token ::comma (str c) nil line)
-
-          \.
-          (token ::dot (str c) nil line)
-
-          \;
-          (token ::semicolon (str c) nil line)
-
-          \-
-          (token ::minus (str c) nil line)
-
-          \+
-          (token ::plus (str c) nil line)
-
-          \*
-          (token ::star (str c) nil line)
-
-          \!
-          (token ::bang (str c) nil line)
-
-          \=
-          (token ::equal (str c) nil line)
-
-          \<
-          (token ::less (str c) nil line)
-
-          \>
-          (token ::greater (str c) nil line)
-
-          nil)]
-    {:s rem, :token next-tkn}))
+      :else
+      nil
+      )))
 
 (defn scan
   "Return a coll of tokens from a string of lox code."
@@ -71,7 +64,7 @@
            tokens []
            errors []]
       (if (seq chars)
-        (let [{:keys [s token]} (next-token chars line)]
+        (let [{:keys [s line token]} (next-token chars line)]
           (if token
             (recur s
                    line
