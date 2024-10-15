@@ -64,7 +64,12 @@
     (is (= [{:message "Unrecognised character: \"", :line 1}] errors))))
 
 (deftest number-literal-test
-  (is false))
+  (let [{:keys [errors tokens]} (s/scan "42")]
+    (is (empty? errors))
+    (is (= [(t ::s/number "42" (Float/parseFloat "42.0") 1)] tokens)))
+  (let [{:keys [errors tokens]} (s/scan "3.14")]
+    (is (empty? errors))
+    (is (= [(t ::s/number "3.14" (Float/parseFloat "3.14") 1)] tokens))))
 
 (deftest bad-number-leading-dot-test
   (is false))

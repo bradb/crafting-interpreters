@@ -35,6 +35,36 @@
           (recur (conj munched-chars current-char)
                  (rest unmunched-chars)))))))
 
+(defn- digit?
+  [c]
+  (when c
+    (<= (int \0) (int c) (int \9))))
+
+(defn- munch-number-literal
+  [s line]
+  (when (digit? (first s))
+    (loop [munched-chars [(first s)]
+           unmunched-chars (rest s)]
+      (let [next-char (first unmunched-chars)]
+        (cond
+          (digit? next-char)
+          (recur (conj munched-chars next-char) (rest unmunched-chars))
+
+          (= \. next-char)
+          (when (digit? (second unmunched-chars))
+            (recur (conj munched-chars next-char (second unmunched-chars))
+                   (drop 2 unmunched-chars)))
+
+          :else
+          (let [lexeme (apply str munched-chars)]
+            {:s unmunched-chars
+             :line line
+             :token (token ::number lexeme (Float/parseFloat lexeme) line)}))))))
+
+(comment
+  (digit? \9)
+  (munch-number-literal "42" 1))
+
 (defn- trim-first-last
   [s]
   (let [len (.length s)]
@@ -72,6 +102,9 @@
       (let [{:keys [string line unmunched]} (munch-str-literal s line)]
         (when (seq string)
           {:s unmunched, :line line, :token (token ::string string (trim-first-last string) line)}))
+
+      (digit? c)
+      (munch-number-literal s line)
 
       :else
       nil
