@@ -61,7 +61,7 @@
 (deftest unterminated-string-test
   (let [{:keys [errors tokens]} (s/scan "\"foo")]
     (is (= [] tokens))
-    (is (= [{:message "Unrecognised character: \"", :line 1}] errors))))
+    (is (= [{:message "Unterminated string: \"foo", :line 1}] errors))))
 
 (deftest number-literal-test
   (let [{:keys [errors tokens]} (s/scan "42")]
@@ -72,7 +72,9 @@
     (is (= [(t ::s/number "3.14" (Float/parseFloat "3.14") 1)] tokens))))
 
 (deftest bad-number-leading-dot-test
-  (is false))
+  (let [{:keys [errors tokens]} (s/scan "42.")]
+    (is (empty? tokens))
+    (is (= [{:message "Numbers cannot begin or end with a dot.", :line 1}] errors))))
 
 (deftest bad-number-trailing-dot-test
   (is false))

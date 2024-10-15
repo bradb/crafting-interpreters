@@ -51,9 +51,10 @@
           (recur (conj munched-chars next-char) (rest unmunched-chars))
 
           (= \. next-char)
-          (when (digit? (second unmunched-chars))
+          (if (digit? (second unmunched-chars))
             (recur (conj munched-chars next-char (second unmunched-chars))
-                   (drop 2 unmunched-chars)))
+                   (drop 2 unmunched-chars))
+            {:error "Numbers cannot begin or end with a dot.", :s (drop 2 unmunched-chars), :line line})
 
           :else
           (let [lexeme (apply str munched-chars)]
@@ -62,8 +63,7 @@
              :token (token ::number lexeme (Float/parseFloat lexeme) line)}))))))
 
 (comment
-  (digit? \9)
-  (munch-number-literal "42" 1))
+  (munch-number-literal "42." 1))
 
 (defn- trim-first-last
   [s]
@@ -107,7 +107,7 @@
       (munch-number-literal s line)
 
       :else
-      nil
+      {:error (str "Unexpected character '" c "'"), :s unscanned-str, :line line}
       )))
 
 (defn scan
@@ -121,15 +121,15 @@
            tokens []
            errors []]
       (if (seq chars)
-        (let [{:keys [s line token]} (next-token chars current-line)
+        (let [{:keys [error s line token]} (next-token chars current-line)
               current-line (or line current-line)]
-          (if (seq token)
-            (recur s
-                   current-line
-                   (conj tokens token)
-                   errors)
+          (if (seq error)
             (recur s
                    current-line
                    tokens
-                   (conj errors (error (first chars) current-line)))))
+                   (conj errors {:message error, :line line}))
+            (recur s
+                   current-line
+                   (conj tokens token)
+                   errors)))
         {:tokens tokens, :errors errors}))))
