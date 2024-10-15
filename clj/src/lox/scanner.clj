@@ -14,7 +14,6 @@
    \+ ::plus
    \* ::star})
 
-
 (defn- token
   [type s lexeme line]
   (Token. type s lexeme line))
@@ -79,22 +78,25 @@
       )))
 
 (defn scan
-  "Return a coll of tokens from a string of lox code."
+  "Return a mapped containing the following keys:
+  :tokens - the valid tokens extracted from s
+  :errors - a list of maps with keys :message and :line"
   [s]
   (when (seq s)
     (loop [chars (vec s)
-           line 1
+           current-line 1
            tokens []
            errors []]
       (if (seq chars)
-        (let [{:keys [s line token]} (next-token chars line)]
-          (if token
+        (let [{:keys [s line token]} (next-token chars current-line)
+              current-line (or line current-line)]
+          (if (seq token)
             (recur s
-                   line
+                   current-line
                    (conj tokens token)
                    errors)
             (recur s
-                   line
-                   (conj tokens token)
-                   (error (first chars) line))))
-        tokens))))
+                   current-line
+                   tokens
+                   (conj errors (error (first chars) current-line)))))
+        {:tokens tokens, :errors errors}))))
