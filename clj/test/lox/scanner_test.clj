@@ -45,9 +45,22 @@
          (s/scan ">="))))
 
 (deftest string-literal-test
+  (is (= [(t ::s/string "\"foobar\"" "foobar" 1)]
+         (s/scan "\"foobar\""))))
+
+(deftest string-literal-with-newline-test
+  (is false))
+
+(deftest unterminated-string-test
   (is false))
 
 (deftest number-literal-test
+  (is false))
+
+(deftest bad-number-leading-dot-test
+  (is false))
+
+(deftest bad-number-trailing-dot-test
   (is false))
 
 (deftest identifier-test
