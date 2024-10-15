@@ -10,40 +10,57 @@
   [c line]
   {:message (str "Unrecognised character: " c), :line line})
 
-(defn- char->token
-  [c line]
-  (case c
-    \(
-    (token ::left-paren (str c) nil line)
+(defn- next-token
+  [s line]
+  (let [c (first s)
+        rem (rest s)
 
-    \)
-    (token ::right-paren (str c) nil line)
+        next-tkn
+        (case c
+          \(
+          (token ::left-paren (str c) nil line)
 
-    \{
-    (token ::left-brace (str c) nil line)
+          \)
+          (token ::right-paren (str c) nil line)
 
-    \}
-    (token ::right-brace (str c) nil line)
+          \{
+          (token ::left-brace (str c) nil line)
 
-    \,
-    (token ::comma (str c) nil line)
+          \}
+          (token ::right-brace (str c) nil line)
 
-    \.
-    (token ::dot (str c) nil line)
+          \,
+          (token ::comma (str c) nil line)
 
-    \;
-    (token ::semicolon (str c) nil line)
+          \.
+          (token ::dot (str c) nil line)
 
-    \-
-    (token ::minus (str c) nil line)
+          \;
+          (token ::semicolon (str c) nil line)
 
-    \+
-    (token ::plus (str c) nil line)
+          \-
+          (token ::minus (str c) nil line)
 
-    \*
-    (token ::star (str c) nil line)
+          \+
+          (token ::plus (str c) nil line)
 
-    nil))
+          \*
+          (token ::star (str c) nil line)
+
+          \!
+          (token ::bang (str c) nil line)
+
+          \=
+          (token ::equal (str c) nil line)
+
+          \<
+          (token ::less (str c) nil line)
+
+          \>
+          (token ::greater (str c) nil line)
+
+          nil)]
+    {:s rem, :token next-tkn}))
 
 (defn scan
   "Return a coll of tokens from a string of lox code."
@@ -53,15 +70,15 @@
            line 1
            tokens []
            errors []]
-      (if-let [c (first chars)]
-        (let [token (char->token c line)]
+      (if (seq chars)
+        (let [{:keys [s token]} (next-token chars line)]
           (if token
-            (recur (rest chars)
+            (recur s
                    line
                    (conj tokens token)
                    errors)
-            (recur (rest chars)
+            (recur s
                    line
                    (conj tokens token)
-                   (error (str c) line))))
+                   (error (first chars) line))))
         tokens))))

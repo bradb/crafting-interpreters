@@ -24,8 +24,23 @@
           (s/->Token ::s/minus "-" nil 1)]
          (s/scan ";.*-"))))
 
-(deftest two-character-lexemes-test
-  (is false))
+(deftest one-and-two-character-lexemes-test
+  (is (= [(s/->Token ::s/bang "!" nil 1)]
+         (s/scan "!")))
+  (is (= [(s/->Token ::s/equal "=" nil 1)]
+         (s/scan "=")))
+  (is (= [(s/->Token ::s/less "<" nil 1)]
+         (s/scan "<")))
+  (is (= [(s/->Token ::s/greater ">" nil 1)]
+         (s/scan ">")))
+  (is (= [(s/->Token ::s/bang-equal "!=" nil 1)]
+         (s/scan "!=")))
+  (is (= [(s/->Token ::s/equal-equal "==" nil 1)]
+         (s/scan "==")))
+  (is (= [(s/->Token ::s/less-equal "<=" nil 1)]
+         (s/scan "<=")))
+  (is (= [(s/->Token ::s/greater-equal ">=" nil 1)]
+         (s/scan ">="))))
 
 (deftest string-literal-test
   (is false))
