@@ -23,3 +23,31 @@
           (s/->Token ::s/star "*" nil 1)
           (s/->Token ::s/minus "-" nil 1)]
          (s/scan ";.*-"))))
+
+(deftest two-character-lexemes-test
+  (is false))
+
+(deftest string-literal-test
+  (is false))
+
+(deftest number-literal-test
+  (is false))
+
+(deftest mix-of-comments-and-ops-test
+  ;; example from Crafting Interpreters, pp. 50
+  (let [code "//this is a comment
+(( )){} // grouping stuff
+!*+-/=<> <= == /operators"]
+    (is false)))
+
+(deftest errors-test
+  (is false))
+
+(deftest ignore-whitespace-test
+  (is false))
+
+(deftest ignore-comments-test
+  (is false))
+
+(deftest track-token-line-test
+  (is false))
