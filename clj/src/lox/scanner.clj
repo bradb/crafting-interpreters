@@ -50,11 +50,10 @@
           (digit? next-char)
           (recur (conj munched-chars next-char) (rest unmunched-chars))
 
-          (= \. next-char)
-          (if (digit? (second unmunched-chars))
-            (recur (conj munched-chars next-char (second unmunched-chars))
-                   (drop 2 unmunched-chars))
-            {:error "Numbers cannot begin or end with a dot.", :s (drop 2 unmunched-chars), :line line})
+          (and (= \. next-char)
+               (digit? (second unmunched-chars)) )
+          (recur (conj munched-chars next-char (second unmunched-chars))
+                 (drop 2 unmunched-chars))
 
           :else
           (let [lexeme (apply str munched-chars)]

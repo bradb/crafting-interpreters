@@ -73,11 +73,16 @@
 
 (deftest bad-number-leading-dot-test
   (let [{:keys [errors tokens]} (s/scan "42.")]
-    (is (empty? tokens))
-    (is (= [{:message "Numbers cannot begin or end with a dot.", :line 1}] errors))))
+    (is (empty? errors))
+    (is (= [(t ::s/number "42" (Float/parseFloat "42") 1)
+            (t ::s/dot "." nil 1)] tokens))))
 
 (deftest bad-number-trailing-dot-test
-  (is false))
+  (let [{:keys [errors tokens]} (s/scan ".99")]
+    (is (empty? errors))
+    (is (= [(t ::s/dot "." nil 1)
+            (t ::s/number "99" (Float/parseFloat "99") 1)]
+           tokens))))
 
 (deftest identifier-test
   (is false))
