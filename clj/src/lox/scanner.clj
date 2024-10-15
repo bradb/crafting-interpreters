@@ -18,22 +18,21 @@
   [type s lexeme line]
   (Token. type s lexeme line))
 
-(defn- error
-  [c line]
-  {:message (str "Unrecognised character: " c), :line line})
-
 (defn- munch-str-literal
   [s line]
   (when (= \" (first s))
     (loop [munched-chars [(first s)]
            unmunched-chars (rest s)]
-      (when-let [current-char (first unmunched-chars)]
+      (if-let [current-char (first unmunched-chars)]
         (if (= \" current-char)
-          {:string (apply str (conj munched-chars current-char))
+          {:token (token ::string (apply str (conj munched-chars current-char)) (apply str (rest munched-chars)) line)
            :line line
-           :unmunched (rest unmunched-chars)}
+           :s (rest unmunched-chars)}
           (recur (conj munched-chars current-char)
-                 (rest unmunched-chars)))))))
+                 (rest unmunched-chars)))
+        {:error (str "Unterminated string: " (apply str munched-chars))
+         :line line
+         :s unmunched-chars}))))
 
 (defn- digit?
   [c]
@@ -98,9 +97,7 @@
         {:s unscanned-str, :line line, :token (token ::greater (str c) nil line)})
 
       (= c \")
-      (let [{:keys [string line unmunched]} (munch-str-literal s line)]
-        (when (seq string)
-          {:s unmunched, :line line, :token (token ::string string (trim-first-last string) line)}))
+      (munch-str-literal s line)
 
       (digit? c)
       (munch-number-literal s line)
