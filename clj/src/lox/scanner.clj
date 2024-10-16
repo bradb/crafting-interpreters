@@ -60,13 +60,27 @@
              :line line
              :token (token ::number lexeme (Float/parseFloat lexeme) line)}))))))
 
-(comment
-  (munch-number-literal "42." 1))
+(defn- alpha?
+  [c]
+  (when c
+    (or (<= (int \a) (int c) (int \z))
+        (<= (int \A) (int c) (int \Z))
+        (= (int \_) (int c)))))
 
-(defn- trim-first-last
-  [s]
-  (let [len (.length s)]
-    (.subSequence s 1 (- len 1))))
+(def ^:private alpha-numeric? (some-fn alpha? digit?))
+
+(defn- munch-identifier
+  [s line]
+  (when (alpha? (first s))
+    (loop [lexeme [(first s)]
+           unmunched (rest s)]
+      (let [next-char (first unmunched)]
+        (if (alpha-numeric? next-char)
+          (recur (conj lexeme next-char)
+                 (rest unmunched))
+          {:s unmunched
+           :line line
+           :token (token ::identifier (apply str lexeme) nil line)})))))
 
 (defn- next-token
   [s line]
@@ -101,6 +115,9 @@
 
       (digit? c)
       (munch-number-literal s line)
+
+      (alpha-numeric? c)
+      (munch-identifier s line)
 
       :else
       {:error (str "Unexpected character '" c "'"), :s unscanned-str, :line line}

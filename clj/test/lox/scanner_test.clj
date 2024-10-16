@@ -1,5 +1,5 @@
 (ns lox.scanner-test
-  (:require  [clojure.test :refer [deftest is]]
+  (:require  [clojure.test :refer [deftest is are]]
              [lox.scanner :as s]))
 
 (def t s/->Token)
@@ -85,7 +85,15 @@
            tokens))))
 
 (deftest identifier-test
-  (is false))
+  (let [ts1 (tokens "foobar")
+        ts2 (tokens "_isOpen")
+        ts3 (tokens "is_open")
+        ts4 (tokens "is_2xx_response")]
+    (are [x y] (= x y)
+      [(t ::s/identifier "foobar" nil 1)] ts1
+      [(t ::s/identifier "_isOpen" nil 1)] ts2
+      [(t ::s/identifier "is_open" nil 1)] ts3
+      [(t ::s/identifier "is_2xx_response" nil 1)] ts4)))
 
 (deftest keyword-test
   (is false))
