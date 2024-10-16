@@ -95,8 +95,18 @@
       [(t ::s/identifier "is_open" nil 1)] ts3
       [(t ::s/identifier "is_2xx_response" nil 1)] ts4)))
 
-(deftest keyword-test
-  (is false))
+(deftest reserved-words-test
+  (let [ts1 (tokens "else")
+        ts2 (tokens "class")
+        ts3 (tokens "fun")
+        ts4 (tokens "or")
+        ts5 (tokens "function")]
+    (are [x y] (= x y)
+      [(t ::s/else "else" nil 1)] ts1
+      [(t ::s/class "class" nil 1)] ts2
+      [(t ::s/fun "fun" nil 1)] ts3
+      [(t ::s/or "or" nil 1)] ts4
+      [(t ::s/identifier "function" nil 1)] ts5)))
 
 (deftest mix-of-comments-and-ops-test
   ;; example from Crafting Interpreters, pp. 50

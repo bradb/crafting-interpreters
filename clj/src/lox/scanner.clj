@@ -14,6 +14,24 @@
    \+ ::plus
    \* ::star})
 
+(def ^:private reserved-words
+  {"and"   ::and
+   "class" ::class
+   "else"  ::else
+   "false" ::false
+   "for"   ::for
+   "fun"   ::fun
+   "if"    ::if
+   "nil"   ::nil
+   "or"    ::or
+   "print" ::print
+   "return" ::return
+   "super" ::super
+   "this"  ::this
+   "true"  ::true
+   "var"   ::var
+   "while" ::while})
+
 (defn- token
   [type s lexeme line]
   (Token. type s lexeme line))
@@ -78,9 +96,13 @@
         (if (alpha-numeric? next-char)
           (recur (conj lexeme next-char)
                  (rest unmunched))
-          {:s unmunched
-           :line line
-           :token (token ::identifier (apply str lexeme) nil line)})))))
+          (let [lexeme-str (apply str lexeme)
+                token-type (if-let [ttype (get reserved-words lexeme-str)]
+                             ttype
+                             ::identifier)]
+            {:s unmunched
+             :line line
+             :token (token token-type lexeme-str nil line)}))))))
 
 (defn- next-token
   [s line]
