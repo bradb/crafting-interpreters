@@ -172,4 +172,25 @@
            ts))))
 
 (deftest parse-hello-world-test
-  (is false))
+  (let [code "fun hello() {
+  print \"hello, world!\";
+}
+
+hello();
+"
+        {:keys [tokens errors]} (s/scan code)]
+    (is (empty? errors))
+    (is (= [(t ::s/fun "fun" nil 1)
+            (t ::s/identifier "hello" nil 1)
+            (t ::s/left-paren "(" nil 1)
+            (t ::s/right-paren ")" nil 1)
+            (t ::s/left-brace "{" nil 1)
+            (t ::s/print "print" nil 2)
+            (t ::s/string "\"hello, world!\"" "hello, world!" 2)
+            (t ::s/semicolon ";" nil 2)
+            (t ::s/right-brace "}" nil 3)
+            (t ::s/identifier "hello" nil 5)
+            (t ::s/left-paren "(" nil 5)
+            (t ::s/right-paren ")" nil 5)
+            (t ::s/semicolon ";" nil 5)]
+           tokens))))
