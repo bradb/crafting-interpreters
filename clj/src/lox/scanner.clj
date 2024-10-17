@@ -14,6 +14,8 @@
    \+ ::plus
    \* ::star})
 
+(def ^:private whitespace #{\tab \space \return})
+
 (def ^:private reserved-words
   {"and"   ::and
    "class" ::class
@@ -56,6 +58,10 @@
   [c]
   (when c
     (<= (int \0) (int c) (int \9))))
+
+(defn- whitespace?
+  [c]
+  (contains? whitespace c))
 
 (defn- munch-number-literal
   [s line]
@@ -109,51 +115,62 @@
   (when (= "//" (apply str (take 2 s)))
     (apply str (drop-while #(not= % \newline) s))))
 
+(defn- ignore-whitespace
+  [s]
+  (apply str (drop-while whitespace? s)))
+
 (defn- next-token
   [s line]
-  (let [c (first s)
-        unscanned-str (rest s)]
-    (cond
-      (contains? single-char-lexemes c)
-      {:s unscanned-str, :line line, :token (token (get single-char-lexemes c) (str c) nil line)}
+  (when (seq s)
+    (let [c (first s)
+          unscanned-str (rest s)]
+      (cond
+        (contains? single-char-lexemes c)
+        {:s unscanned-str, :line line, :token (token (get single-char-lexemes c) (str c) nil line)}
 
-      (= c \!)
-      (if (= \= (first unscanned-str))
-        {:s (rest unscanned-str), :line line, :token (token ::bang-equal "!=" nil line)}
-        {:s unscanned-str, :line line, :token (token ::bang (str c) nil line)})
+        (= c \!)
+        (if (= \= (first unscanned-str))
+          {:s (rest unscanned-str), :line line, :token (token ::bang-equal "!=" nil line)}
+          {:s unscanned-str, :line line, :token (token ::bang (str c) nil line)})
 
-      (= c \=)
-      (if (= \= (first unscanned-str))
-        {:s (rest unscanned-str), :line line, :token (token ::equal-equal "==" nil line)}
-        {:s unscanned-str, :line line, :token (token ::equal (str c) nil line)})
+        (= c \=)
+        (if (= \= (first unscanned-str))
+          {:s (rest unscanned-str), :line line, :token (token ::equal-equal "==" nil line)}
+          {:s unscanned-str, :line line, :token (token ::equal (str c) nil line)})
 
-      (= c \<)
-      (if (= \= (first unscanned-str))
-        {:s (rest unscanned-str), :line line, :token (token ::less-equal "<=" nil line)}
-        {:s unscanned-str, :line line, :token (token ::less (str c) nil line)})
+        (= c \<)
+        (if (= \= (first unscanned-str))
+          {:s (rest unscanned-str), :line line, :token (token ::less-equal "<=" nil line)}
+          {:s unscanned-str, :line line, :token (token ::less (str c) nil line)})
 
-      (= c \>)
-      (if (= \= (first unscanned-str))
-        {:s (rest unscanned-str), :line line, :token (token ::greater-equal ">=" nil line)}
-        {:s unscanned-str, :line line, :token (token ::greater (str c) nil line)})
+        (= c \>)
+        (if (= \= (first unscanned-str))
+          {:s (rest unscanned-str), :line line, :token (token ::greater-equal ">=" nil line)}
+          {:s unscanned-str, :line line, :token (token ::greater (str c) nil line)})
 
-      (= c \/)
-      (if (= \/ (first unscanned-str))
-        (recur (skip-comment s) line)
-        {:s unscanned-str, :line line, :token (token ::slash "/" nil line)})
+        (= c \/)
+        (if (= \/ (first unscanned-str))
+          (recur (skip-comment s) line)
+          {:s unscanned-str, :line line, :token (token ::slash "/" nil line)})
 
-      (= c \")
-      (munch-str-literal s line)
+        (= c \")
+        (munch-str-literal s line)
 
-      (digit? c)
-      (munch-number-literal s line)
+        (digit? c)
+        (munch-number-literal s line)
 
-      (alpha-numeric? c)
-      (munch-identifier s line)
+        (alpha-numeric? c)
+        (munch-identifier s line)
 
-      :else
-      {:error (str "Unexpected character '" c "'"), :s unscanned-str, :line line}
-      )))
+        (whitespace? c)
+        (recur (ignore-whitespace s) line)
+
+        :else
+        {:error (str "Unexpected character '" c "'"), :s unscanned-str, :line line}
+        ))))
+
+(comment
+  (scan "foo bar \r"))
 
 (defn scan
   "Return a mapped containing the following keys:
@@ -173,8 +190,10 @@
                    current-line
                    tokens
                    (conj errors {:message error, :line line}))
-            (recur s
-                   current-line
-                   (conj tokens token)
-                   errors)))
+            (if (seq token)
+              (recur s
+                     current-line
+                     (conj tokens token)
+                     errors)
+              {:tokens tokens, :errors errors})))
         {:tokens tokens, :errors errors}))))

@@ -112,7 +112,25 @@
   (is false))
 
 (deftest ignore-whitespace-test
-  (is false))
+  (let [{tokens1 :tokens, errors1 :errors} (s/scan " / isClosed +(")
+        {tokens2 :tokens, errors2 :errors} (s/scan "\thello world ")
+        {tokens3 :tokens, errors3 :errors} (s/scan "fun foo \r")]
+    (is (every? empty? [errors1 errors2 errors3]))
+
+    (are [x y] (= x y)
+      [(t ::s/slash "/" nil 1)
+       (t ::s/identifier "isClosed" nil 1)
+       (t ::s/plus "+" nil 1)
+       (t ::s/left-paren "(" nil 1)]
+      tokens1
+
+      [(t ::s/identifier "hello" nil 1)
+       (t ::s/identifier "world" nil 1)]
+      tokens2
+
+      [(t ::s/fun "fun" nil 1)
+       (t ::s/identifier "foo" nil 1)]
+      tokens3)))
 
 (deftest slash-test
   (is (= [(t ::s/slash "/" nil 1)] (tokens "/"))))
