@@ -55,7 +55,7 @@
          (tokens "\"foobar\""))))
 
 (deftest string-literal-with-newline-test
-  (is (= [(t ::s/string "\"foo\nbar\"" "foo\nbar" 1)]
+  (is (= [(t ::s/string "\"foo\nbar\"" "foo\nbar" 2)]
          (tokens "\"foo\nbar\""))))
 
 (deftest unterminated-string-test
@@ -139,14 +139,25 @@
   (let [ts1 (tokens "// this is the identifier foobar\nfoobar // isn't that cool")
         ts2 (tokens "// a boring comment\nis_2xx_response")]
     (are [x y] (= x y)
-      [(t ::s/identifier "foobar" nil 1)] ts1
-      [(t ::s/identifier "is_2xx_response" nil 1)] ts2)))
+      [(t ::s/identifier "foobar" nil 2)] ts1
+      [(t ::s/identifier "is_2xx_response" nil 2)] ts2)))
 
 (deftest track-token-line-test
-  (is false))
+  (let [ts (tokens "foo\nbar\n\nfun hello")]
+    (is (= [(t ::s/identifier "foo" nil 1)
+            (t ::s/identifier "bar" nil 2)
+            (t ::s/fun "fun" nil 4)
+            (t ::s/identifier "hello" nil 4)]
+           ts))))
 
 (deftest track-token-line-multiline-string
-  (is false))
+  (let [ts (tokens "var s = \"foo\nbar\" baz")]
+    (is (= [(t ::s/var "var" nil 1)
+            (t ::s/identifier "s" nil 1)
+            (t ::s/equal "=" nil 1)
+            (t ::s/string "\"foo\nbar\"" "foo\nbar" 2)
+            (t ::s/identifier "baz" nil 2)]
+           ts))))
 
 (deftest parse-hello-world-test
   (is false))

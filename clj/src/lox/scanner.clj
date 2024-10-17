@@ -42,14 +42,23 @@
   [s line]
   (when (= \" (first s))
     (loop [munched-chars [(first s)]
-           unmunched-chars (rest s)]
+           unmunched-chars (rest s)
+           line line]
       (if-let [current-char (first unmunched-chars)]
-        (if (= \" current-char)
+        (case current-char 
+          \"
           {:token (token ::string (apply str (conj munched-chars current-char)) (apply str (rest munched-chars)) line)
            :line line
            :s (rest unmunched-chars)}
+
+          \newline
           (recur (conj munched-chars current-char)
-                 (rest unmunched-chars)))
+                 (rest unmunched-chars)
+                 (inc line))
+
+          (recur (conj munched-chars current-char)
+                 (rest unmunched-chars)
+                 line))
         {:error (str "Unterminated string: " (apply str munched-chars))
          :line line
          :s unmunched-chars}))))
@@ -153,6 +162,9 @@
           (recur (skip-comment s) line)
           {:s unscanned-str, :line line, :token (token ::slash "/" nil line)})
 
+        (= c \newline)
+        (recur unscanned-str (inc line))
+
         (= c \")
         (munch-str-literal s line)
 
@@ -168,9 +180,6 @@
         :else
         {:error (str "Unexpected character '" c "'"), :s unscanned-str, :line line}
         ))))
-
-(comment
-  (scan "foo bar \r"))
 
 (defn scan
   "Return a mapped containing the following keys:
