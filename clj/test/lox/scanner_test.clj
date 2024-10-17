@@ -109,7 +109,19 @@
       [(t ::s/identifier "function" nil 1)] ts5)))
 
 (deftest errors-test
-  (is false))
+  (let [{ts1 :tokens, e1 :errors} (s/scan "var foo = 1")
+        {ts2 :tokens, e2 :errors} (s/scan "^var foo")
+        {ts3 :tokens, e3 :errors} (s/scan "some` bad\n|code")]
+    (is (= 4 (count ts1)))
+    (is (empty? e1))
+
+    (is (= 2 (count ts2)))
+    (is (= [{:message "Unexpected character '^'", :line 1}] e2))
+
+    (is (= 3 (count ts3)))
+    (is (= [{:message "Unexpected character '`'", :line 1}
+            {:message "Unexpected character '|'", :line 2}]
+           e3))))
 
 (deftest ignore-whitespace-test
   (let [{tokens1 :tokens, errors1 :errors} (s/scan " / isClosed +(")
