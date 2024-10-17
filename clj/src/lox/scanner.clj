@@ -104,6 +104,11 @@
              :line line
              :token (token token-type lexeme-str nil line)}))))))
 
+(defn- skip-comment
+  [s]
+  (when (= "//" (apply str (take 2 s)))
+    (apply str (drop-while #(not= % \newline) s))))
+
 (defn- next-token
   [s line]
   (let [c (first s)
@@ -133,7 +138,9 @@
         {:s unscanned-str, :line line, :token (token ::greater (str c) nil line)})
 
       (= c \/)
-      {:s unscanned-str, :line line, :token (token ::slash "/" nil line)}
+      (if (= \/ (first unscanned-str))
+        (recur (skip-comment s) line)
+        {:s unscanned-str, :line line, :token (token ::slash "/" nil line)})
 
       (= c \")
       (munch-str-literal s line)
