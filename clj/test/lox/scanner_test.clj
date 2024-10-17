@@ -108,21 +108,21 @@
       [(t ::s/or "or" nil 1)] ts4
       [(t ::s/identifier "function" nil 1)] ts5)))
 
-(deftest mix-of-comments-and-ops-test
-  ;; example from Crafting Interpreters, pp. 50
-  (let [code "//this is a comment
-(( )){} // grouping stuff
-!*+-/=<> <= == /operators"]
-    (is false)))
-
 (deftest errors-test
   (is false))
 
 (deftest ignore-whitespace-test
   (is false))
 
+(deftest slash-test
+  (is (= [(t ::s/slash "/" nil 1)] (tokens "/"))))
+
 (deftest ignore-comments-test
-  (is false))
+  (let [ts1 (tokens "// this is the identifier foobar\nfoobar // isn't that cool")
+        ts2 (tokens "// a boring comment\nis_2xx_response")]
+    (are [x y] (= x y)
+      [(t ::s/identifier "foobar" nil 1)] ts1
+      [(t ::s/identifier "is_2xx_response" nil 1)] ts2)))
 
 (deftest track-token-line-test
   (is false))

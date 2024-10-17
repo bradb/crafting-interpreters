@@ -132,6 +132,9 @@
         {:s (rest unscanned-str), :line line, :token (token ::greater-equal ">=" nil line)}
         {:s unscanned-str, :line line, :token (token ::greater (str c) nil line)})
 
+      (= c \/)
+      {:s unscanned-str, :line line, :token (token ::slash "/" nil line)}
+
       (= c \")
       (munch-str-literal s line)
 
