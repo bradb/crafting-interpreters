@@ -21,15 +21,26 @@
                       false
 
                       (:literal pt))]
-        [(LiteralExpr. literal) (rest tokens)])
-      [nil tokens])))
+        {:error nil
+         :expr (LiteralExpr. literal)
+         :tokens (rest tokens)})
+      {:error nil
+       :expr nil
+       :tokens tokens})))
+
+(defn- unary
+  [tokens]
+  (primary tokens))
+
+(defn- expression
+  [tokens]
+  (unary tokens))
 
 (defn parse
   "Map a coll of tokens to an AST.
 
   The root of the AST is an expr from lox.expr, e.g. GroupingExpr, BinaryExpr, etc."
   [tokens]
-  (let [[t rest-tokens] (primary tokens)]
-    t))
+  (expression tokens))
 
 
