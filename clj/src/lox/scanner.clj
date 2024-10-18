@@ -34,7 +34,7 @@
    "var"   ::var
    "while" ::while})
 
-(defn- token
+(defn token
   [type s lexeme line]
   (Token. type s lexeme line))
 
