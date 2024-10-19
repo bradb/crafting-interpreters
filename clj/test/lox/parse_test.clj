@@ -29,7 +29,17 @@
                                  (LiteralExpr. true))) (parse "!!true"))))
 
 (deftest parse-factor-test
-  (is false))
+  (is (= (BinaryExpr. (s/token ::s/star "*" nil 1)
+                      (LiteralExpr. (Float/parseFloat "2"))
+                      (LiteralExpr. (Float/parseFloat "4")))
+         (parse "2 * 4")))
+  (is (= (BinaryExpr. (s/token ::s/star "*" nil 1)
+                      (LiteralExpr. (Float/parseFloat "2"))
+                      (BinaryExpr.
+                       (s/token ::s/slash "/" nil 1)
+                       (LiteralExpr. (Float/parseFloat "4"))
+                       (LiteralExpr. (Float/parseFloat "6")) ))
+         (parse "2 * 4 / 6"))) )
 
 (deftest syntax-errors-test
   (is false))
