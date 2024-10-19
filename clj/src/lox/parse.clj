@@ -50,11 +50,11 @@
    (let [{u :expr, ts :tokens} (unary tokens)]
      (if (seq u)
        (if (#{::s/star ::s/slash} (:type (first ts)))
-         (recur (rest ts) (concat [(BinaryExpr. (first ts) u nil)] rights))
+         (recur (rest ts) (conj rights (BinaryExpr. (first ts) u nil)))
          (let [expr (reduce (fn [ex right-expr]
                               (assoc right-expr :right ex))
                             u
-                            rights)]
+                            (rseq rights))]
            {:expr expr, :tokens ts}))
        {:expr nil, :tokens tokens}))))
 
