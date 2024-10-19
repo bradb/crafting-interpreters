@@ -12,7 +12,7 @@
 (defn- primary
   [tokens]
   (when-let [pt (first tokens)]
-    (if (primary? (:type pt))
+    (when (primary? (:type pt))
       (let [literal (case (:type pt)
                       ::s/true
                       true
@@ -21,16 +21,27 @@
                       false
 
                       (:literal pt))]
-        {:error nil
-         :expr (LiteralExpr. literal)
-         :tokens (rest tokens)})
-      {:error nil
-       :expr nil
-       :tokens tokens})))
+        {:expr (LiteralExpr. literal), :tokens (rest tokens)}))))
 
 (defn- unary
-  [tokens]
-  (primary tokens))
+  ([tokens]
+   (unary tokens []))
+  ([tokens opers]
+   (let [{p :expr, tks :tokens} (primary tokens)]
+     (cond
+       (seq p)
+       (let [expr
+             (reduce (fn wrap-opers [right oper]
+                       (UnaryExpr. oper right))
+                     p
+                     (reverse opers))]
+         {:expr expr, :tokens (rest tks)})
+
+       (#{::s/bang ::s/minus} (:type (first tokens)))
+       (unary (rest tokens) (conj opers (first tokens)))
+
+       :else
+       nil))))
 
 (defn- expression
   [tokens]

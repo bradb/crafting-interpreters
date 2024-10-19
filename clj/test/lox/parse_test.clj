@@ -22,8 +22,11 @@
   (is false "parens primary expressions not yet tested"))
 
 (deftest parse-unary-test
-  (is (= (parse "-1234") (UnaryExpr. (s/token ::s/minus "-" nil 1) (LiteralExpr. 1234))))
-  (is (= (parse "!true") (UnaryExpr. (s/token ::s/bang "!" nil 1) (LiteralExpr. true)))))
+  (is (= (UnaryExpr. (s/token ::s/minus "-" nil 1) (LiteralExpr. (Float/parseFloat "1234"))) (parse "-1234")))
+  (is (= (UnaryExpr. (s/token ::s/bang "!" nil 1) (LiteralExpr. true)) (parse "!true")))
+  (is (= (UnaryExpr. (s/token ::s/bang "!" nil 1)
+                     (UnaryExpr. (s/token ::s/bang "!" nil 1)
+                                 (LiteralExpr. true))) (parse "!!true"))))
 
 (deftest parse-factor-test
   (is false))
