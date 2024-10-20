@@ -54,5 +54,23 @@
                        (LiteralExpr. (Float/parseFloat "622"))))
          (parse "2 + 45 / 622"))))
 
+(deftest parse-comparison-test
+  (is (= (BinaryExpr.
+          (s/token ::s/greater ">" nil 1)
+          (LiteralExpr. (Float/parseFloat "31"))
+          (LiteralExpr. (Float/parseFloat "5038")))
+         (parse "31 > 5038")))
+  (is (= (BinaryExpr.
+          (s/token ::s/greater-equal ">=" nil 1)
+          (BinaryExpr.
+           (s/token ::s/slash "/" nil 1)
+           (LiteralExpr. (Float/parseFloat "10"))
+           (LiteralExpr. (Float/parseFloat "5")))
+          (BinaryExpr.
+           (s/token ::s/plus "+" nil 1)
+           (LiteralExpr. (Float/parseFloat "3"))
+           (LiteralExpr. (Float/parseFloat "2"))))
+         (parse "10 / 5 >= 3 + 2"))))
+
 (deftest syntax-errors-test
   (is false))
