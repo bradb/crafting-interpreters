@@ -11,17 +11,25 @@
 
 (declare expression)
 
+(defn- drop-current-statement
+  [tokens]
+  nil)
+
 (defn- primary
   [tokens]
   (when-let [pt (first tokens)]
     (cond
       (= ::s/left-paren (:type pt))
       (let [{rest-tokens :tokens, expr :expr} (expression (rest tokens))]
-        (when (and (seq expr)
-                   (= ::s/right-paren (->> rest-tokens
-                                           first
-                                           :type)))
-          {:expr (GroupingExpr. expr), :tokens (rest rest-tokens)}))
+        (if (seq expr)
+          (if (= ::s/right-paren (->> rest-tokens
+                                      first
+                                      :type))
+            {:expr (GroupingExpr. expr), :tokens (rest rest-tokens)}
+            (throw (ex-info "missing expected closing ')'", {:parse-error true
+                                                             :tokens (drop-current-statement tokens)})))
+          (throw (ex-info "missing expression after '('", {:parse-error true
+                                                           :tokens (drop-current-statement tokens)}))))
 
       (literal? (:type pt))
       (let [literal (case (:type pt)
@@ -116,7 +124,13 @@
 
 (defn- expression
   [tokens]
-  (equality tokens))
+  (try
+    (equality tokens)
+    (catch Exception e
+      (let [{:keys [parse-error tokens]} (ex-data e)]
+        (if parse-error
+          {:errors [(.getMessage e)], :tokens tokens}
+          (throw e))))))
 
 (defn parse
   "Map a coll of tokens to an AST.

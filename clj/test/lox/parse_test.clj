@@ -107,5 +107,18 @@
 
        (parse "5 + 3 / 10 != 1 - 2"))))
 
-(deftest syntax-errors-test
-  (is false))
+(deftest parsing-errors-test
+  (let [{:keys [errors tokens expr]} (-> "(3 +" ;; "1 / 2 - (3 +"
+                                         s/scan
+                                         :tokens
+                                         lp/parse)]
+    (is (not (seq tokens)))
+    (is (not (seq expr)))
+    (is (= ["missing expected closing ')'"]
+           errors)))
+  (let [{:keys [errors tokens expr]} (-> "1 / - ; 2 + 2"
+                                         s/scan
+                                         lp/parse)]
+    (is (=  "2 + 2" tokens))
+    (is (not (seq expr)))
+    (is (= ["unexpected token '-'"] errors))))
