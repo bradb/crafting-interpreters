@@ -58,9 +58,24 @@
            {:expr expr, :tokens ts}))
        {:expr nil, :tokens tokens}))))
 
+(defn- term
+  ([tokens]
+   (term tokens []))
+  ([tokens rights]
+   (let [{u :expr, ts :tokens} (factor tokens)]
+     (if (seq u)
+       (if (#{::s/plus ::s/minus} (:type (first ts)))
+         (recur (rest ts) (conj rights (BinaryExpr. (first ts) u nil)))
+         (let [expr (reduce (fn [ex right-expr]
+                              (assoc right-expr :right ex))
+                            u
+                            (rseq rights))]
+           {:expr expr, :tokens ts}))
+       {:expr nil, :tokens tokens}))))
+
 (defn- expression
   [tokens]
-  (factor tokens))
+  (term tokens))
 
 (defn parse
   "Map a coll of tokens to an AST.

@@ -41,5 +41,18 @@
                        (LiteralExpr. (Float/parseFloat "6")) ))
          (parse "2 * 4 / 6"))) )
 
+(deftest parse-term-test
+  (is (= (BinaryExpr. (s/token ::s/plus "+" nil 1)
+                      (LiteralExpr. (Float/parseFloat "2"))
+                      (LiteralExpr. (Float/parseFloat "4")))
+         (parse "2 + 4")))
+  (is (= (BinaryExpr.
+          (s/token ::s/plus "+" nil 1)
+          (LiteralExpr. (Float/parseFloat "2"))
+          (BinaryExpr. (s/token ::s/slash "/" nil 1)
+                       (LiteralExpr. (Float/parseFloat "45"))
+                       (LiteralExpr. (Float/parseFloat "622"))))
+         (parse "2 + 45 / 622"))))
+
 (deftest syntax-errors-test
   (is false))
