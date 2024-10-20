@@ -3,16 +3,27 @@
   (:require [lox.scanner :as s])
   (:import [lox.expr GroupingExpr BinaryExpr UnaryExpr LiteralExpr]))
 
-(def primary? #{::s/number
+(def literal? #{::s/number
                 ::s/true
                 ::s/false
                 ::s/nil
                 ::s/string})
 
+(declare expression)
+
 (defn- primary
   [tokens]
   (when-let [pt (first tokens)]
-    (when (primary? (:type pt))
+    (cond
+      (= ::s/left-paren (:type pt))
+      (let [{rest-tokens :tokens, expr :expr} (expression (rest tokens))]
+        (when (and (seq expr)
+                   (= ::s/right-paren (->> rest-tokens
+                                           first
+                                           :type)))
+          {:expr (GroupingExpr. expr), :tokens (rest rest-tokens)}))
+
+      (literal? (:type pt))
       (let [literal (case (:type pt)
                       ::s/true
                       true

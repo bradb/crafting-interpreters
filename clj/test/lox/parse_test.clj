@@ -19,7 +19,9 @@
     "true" true
     "false" false
     "nil" nil)
-  (is false "parens primary expressions not yet tested"))
+  (is (= (GroupingExpr.
+          (LiteralExpr. (Float/parseFloat "42")))
+         (parse "(42)"))))
 
 (deftest parse-unary-test
   (is (= (UnaryExpr. (s/token ::s/minus "-" nil 1) (LiteralExpr. (Float/parseFloat "1234"))) (parse "-1234")))
@@ -38,8 +40,8 @@
                       (BinaryExpr.
                        (s/token ::s/slash "/" nil 1)
                        (LiteralExpr. (Float/parseFloat "4"))
-                       (LiteralExpr. (Float/parseFloat "6")) ))
-         (parse "2 * 4 / 6"))) )
+                       (LiteralExpr. (Float/parseFloat "6"))))
+         (parse "2 * 4 / 6"))))
 
 (deftest parse-term-test
   (is (= (BinaryExpr. (s/token ::s/plus "+" nil 1)
@@ -70,7 +72,16 @@
            (s/token ::s/plus "+" nil 1)
            (LiteralExpr. (Float/parseFloat "3"))
            (LiteralExpr. (Float/parseFloat "2"))))
-         (parse "10 / 5 >= 3 + 2"))))
+         (parse "10 / 5 >= 3 + 2")))
+  (is (= (BinaryExpr.
+          (s/token ::s/slash "/" nil 1)
+          (GroupingExpr.
+           (BinaryExpr.
+            (s/token ::s/plus "+" nil 1)
+            (LiteralExpr. (Float/parseFloat "2"))
+            (LiteralExpr. (Float/parseFloat "45"))))
+          (LiteralExpr. (Float/parseFloat "622")))
+         (parse "(2 + 45) / 622"))))
 
 (deftest parse-equality-test
   (is (= (BinaryExpr.
