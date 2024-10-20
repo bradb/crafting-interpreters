@@ -72,5 +72,29 @@
            (LiteralExpr. (Float/parseFloat "2"))))
          (parse "10 / 5 >= 3 + 2"))))
 
+(deftest parse-equality-test
+  (is (= (BinaryExpr.
+          (s/token ::s/bang-equal "!=" nil 1)
+          (LiteralExpr. (Float/parseFloat "5"))
+          (LiteralExpr. (Float/parseFloat "3")))
+         (parse "5 != 3")))
+
+  (is (=
+       (BinaryExpr.
+        (s/token ::s/bang-equal "!=" nil 1)
+        (BinaryExpr.
+         (s/token ::s/plus "+" nil 1)
+         (LiteralExpr. (Float/parseFloat "5"))
+         (BinaryExpr.
+          (s/token ::s/slash "/" nil 1)
+          (LiteralExpr. (Float/parseFloat "3"))
+          (LiteralExpr. (Float/parseFloat "10"))))
+        (BinaryExpr.
+         (s/token ::s/minus "-" nil 1)
+         (LiteralExpr. (Float/parseFloat "1"))
+         (LiteralExpr. (Float/parseFloat "2"))))
+
+       (parse "5 + 3 / 10 != 1 - 2"))))
+
 (deftest syntax-errors-test
   (is false))

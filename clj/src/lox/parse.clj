@@ -88,9 +88,24 @@
            {:expr expr, :tokens ts}))
        {:expr nil, :tokens tokens}))))
 
+(defn- equality
+  ([tokens]
+   (equality tokens []))
+  ([tokens rights]
+   (let [{cp :expr, ts :tokens} (comparison tokens)]
+     (if (seq cp)
+       (if (#{::s/bang-equal ::s/equal-equal} (:type (first ts)))
+         (recur (rest ts) (conj rights (BinaryExpr. (first ts) cp nil)))
+         (let [expr (reduce (fn [ex right-expr]
+                              (assoc right-expr :right ex))
+                            cp
+                            (rseq rights))]
+           {:expr expr, :tokens ts}))
+       {:expr nil, :tokens tokens}))))
+
 (defn- expression
   [tokens]
-  (comparison tokens))
+  (equality tokens))
 
 (defn parse
   "Map a coll of tokens to an AST.
