@@ -1,3 +1,5 @@
+;; TODO: refactor :)
+
 (ns lox.parse
   "Parser for the Lox programming language."
   (:require [lox.scanner :as s])
@@ -14,6 +16,9 @@
 (defn- drop-current-statement
   [tokens]
   nil)
+
+(comment
+  (primary (:tokens (s/scan "(3"))))
 
 (defn- primary
   [tokens]
