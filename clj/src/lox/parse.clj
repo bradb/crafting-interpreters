@@ -67,20 +67,32 @@
        :else
        nil))))
 
+(defn- discard-current-statement
+  [tokens]
+  (let [ts (drop-while #(not= (:type %) ::s/semicolon) tokens)]
+    (if (= (:type (first ts)) ::s/semicolon)
+      (rest ts)
+      ts)))
+
 (defn- factor
   ([tokens]
    (factor tokens []))
-  ([tokens rights]
-   (let [{u :expr, ts :tokens} (unary tokens)]
-     (if (seq u)
-       (if (#{::s/star ::s/slash} (:type (first ts)))
-         (recur (rest ts) (conj rights (BinaryExpr. (first ts) u nil)))
-         (let [expr (reduce (fn [ex right-expr]
-                              (assoc right-expr :right ex))
-                            u
-                            (rseq rights))]
+  ([tokens chunks]
+   (let [{ex :expr, ts :tokens} (unary tokens)]
+     (if (seq ex)
+       (if (#{::s/slash ::s/star} (:type (first ts)))
+         (recur (rest ts) (cons [ex (first ts)] chunks))
+         (let [expr (reduce
+                     (fn [ex [u op]]
+                       (BinaryExpr. op u ex))
+                     ex
+                     chunks)]
            {:expr expr, :tokens ts}))
-       {:expr nil, :tokens tokens}))))
+       (let [[_ op] (last (seq chunks))]
+         (if (seq op)
+           (throw (ex-info (str "expected expression after '" (:lexeme op) "'")
+                           {:parse-error true, :tokens (discard-current-statement tokens)}))
+           {:expr ex, :tokens ts}))))))
 
 (defn- term
   ([tokens]

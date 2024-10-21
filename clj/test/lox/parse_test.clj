@@ -122,4 +122,4 @@
                                          lp/parse)]
     (is (=  (:tokens (s/scan " 2 + 2")) tokens))
     (is (not (seq expr)))
-    (is (= ["unexpected token '-'"] errors))))
+    (is (= ["expected expression after '/'"] errors))))
