@@ -182,7 +182,7 @@
         ))))
 
 (defn scan
-  "Return a mapped containing the following keys:
+  "Return a map containing the following keys:
   :tokens - the valid tokens extracted from s
   :errors - a list of maps with keys :message and :line"
   [s]

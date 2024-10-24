@@ -150,7 +150,7 @@
           (throw e))))))
 
 (defn parse
-  "Map a coll of tokens to an AST.
+  "Map a coll of tokens to an AST. Returns a lox.expr expression.
 
   The root of the AST is an expr from lox.expr, e.g. GroupingExpr, BinaryExpr, etc."
   [tokens]
