@@ -3,7 +3,10 @@
              [lox.run :as lr]))
 
 (deftest run-unary-test
-  (is (= "14" (lr/run "81 - 67"))))
+  (is (= "-67" (lr/run "-67")))
+  (is (= "42" (lr/run "--42")))
+  (is (= "15" (lr/run "15")))
+  (is (= "true" (lr/run "!false"))))
 
 (deftest run-syntax-error-test
   (is false))
