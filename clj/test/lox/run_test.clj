@@ -35,6 +35,16 @@
     "foobar" "\"foo\" + \"bar\""
     "hello, world!" "\"hello,\" + \" world!\""))
 
+(deftest complex-exprs-test
+  (are [x y] (= x (lr/run y))
+    "6" "1 + 2 + 3"
+    "24" "4 * 3 * (1 + 1)"
+    "true" "8 + 12 == 36 - 16"
+    "false" "8 + 12 == 36 - 17"
+    "342" "7 + (12 * (4 - 1)) + (300 - 1)"
+    "false" "(10 > 12) == (88 < 100)"
+    "true" "(10 < 12) == (88 < 100)"))
+
 (deftest runtime-errors-test
   (is false))
 
