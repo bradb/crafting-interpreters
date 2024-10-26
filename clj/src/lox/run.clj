@@ -23,10 +23,10 @@
              (subs r 0 (- (.length r) 2))
              r))
 
-         (boolean? result)
-         (str result)
+         (nil? result)
+         "nil"
 
          :else
-         (throw (Exception. "not implemented")))))
+         (str result))))
 
 

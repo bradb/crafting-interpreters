@@ -4,6 +4,10 @@
 
 (defmulti eval-expr class)
 
+(defmethod eval-expr GroupingExpr
+  [{:keys [expr] :as _expr}]
+  (eval-expr expr))
+
 (defmethod eval-expr UnaryExpr
   [{:keys [oper right] :as _expr}]
   (case (:type oper)
