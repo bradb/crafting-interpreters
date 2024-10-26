@@ -18,16 +18,22 @@
   (is (= "true" (lr/run "!false"))))
 
 (deftest run-binary-test
-  (is false))
-
-(deftest run-addition-test
-  (is false))
+  (are [x y] (= x (lr/run y))
+    "2" "1 + 1"
+    "0" "1 - 1"
+    "5" "20 / 4"
+    "200" "5 * 40"
+    "true" "10 > 9"
+    "false" "10 >= 11"
+    "true" "1918 < 7171"
+    "false" "10 <= 0"
+    "false" "\"hello\" != \"hello\""
+    "true" "\"hello\" == \"hello\""))
 
 (deftest run-string-concat-test
-  (is false))
-
-(deftest run-boolean-test
-  (is false))
+  (are [x y] (= x (lr/run y))
+    "foobar" "\"foo\" + \"bar\""
+    "hello, world!" "\"hello,\" + \" world!\""))
 
 (deftest runtime-errors-test
   (is false))
