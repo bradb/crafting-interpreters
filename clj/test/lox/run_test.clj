@@ -46,10 +46,10 @@
     "true" "(10 < 12) == (88 < 100)"))
 
 (deftest runtime-errors-test
-  (is false))
+  (is (thrown-with-msg? clojure.lang.ExceptionInfo #"must be numbers" (lr/run "1 * false"))))
 
-(deftest run-syntax-error-test
-  (is false))
+(deftest run-parser-error-test
+  (is (thrown-with-msg? clojure.lang.ExceptionInfo #"error parsing input" (lr/run "(42"))))
 
-(deftest run-parse-error-test
-  (is false))
+(deftest run-lexer-error-test
+  (is (thrown-with-msg? clojure.lang.ExceptionInfo #"error parsing input" (lr/run "\"foo"))))
