@@ -6,9 +6,12 @@
 
 (defmethod eval-expr UnaryExpr
   [{:keys [oper right] :as _expr}]
-  (if (= ::s/minus (:type oper))
+  (case (:type oper)
+    ::s/minus
     (- (eval-expr right))
-    (eval-expr right)))
+
+    ::s/bang
+    (not (eval-expr right))))
 
 (defmethod eval-expr LiteralExpr
   [{:keys [val] :as _expr}]
