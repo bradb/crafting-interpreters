@@ -3,7 +3,7 @@
 (ns lox.parse
   "Parser for the Lox programming language."
   (:require [lox.scanner :as s])
-  (:import [lox.expr GroupingExpr BinaryExpr UnaryExpr LiteralExpr]))
+  (:import [lox.statement GroupingExpression BinaryExpression UnaryExpression LiteralExpression]))
 
 (def literal? #{::s/number
                 ::s/true
@@ -17,9 +17,6 @@
   [tokens]
   nil)
 
-(comment
-  (primary (:tokens (s/scan "(3"))))
-
 (defn- primary
   [tokens]
   (when-let [pt (first tokens)]
@@ -30,7 +27,7 @@
           (if (= ::s/right-paren (->> rest-tokens
                                       first
                                       :type))
-            {:expr (GroupingExpr. expr), :tokens (rest rest-tokens)}
+            {:expr (GroupingExpression. expr), :tokens (rest rest-tokens)}
             (throw (ex-info "missing expected closing ')'", {:parse-error true
                                                              :tokens (drop-current-statement tokens)})))
           (throw (ex-info "missing expression after '('", {:parse-error true
@@ -45,7 +42,7 @@
                       false
 
                       (:literal pt))]
-        {:expr (LiteralExpr. literal), :tokens (rest tokens)}))))
+        {:expr (LiteralExpression. literal), :tokens (rest tokens)}))))
 
 (defn- unary
   ([tokens]
@@ -56,7 +53,7 @@
        (seq p)
        (let [expr
              (reduce (fn wrap-opers [right oper]
-                       (UnaryExpr. oper right))
+                       (UnaryExpression. oper right))
                      p
                      (reverse opers))]
          {:expr expr, :tokens ts})
@@ -84,7 +81,7 @@
          (recur (rest ts) (cons [ex (first ts)] chunks))
          (let [expr (reduce
                      (fn [ex [u op]]
-                       (BinaryExpr. op u ex))
+                       (BinaryExpression. op u ex))
                      ex
                      chunks)]
            {:expr expr, :tokens ts}))
@@ -101,7 +98,7 @@
    (let [{fc :expr, ts :tokens} (factor tokens)]
      (if (seq fc)
        (if (#{::s/plus ::s/minus} (:type (first ts)))
-         (recur (rest ts) (conj rights (BinaryExpr. (first ts) fc nil)))
+         (recur (rest ts) (conj rights (BinaryExpression. (first ts) fc nil)))
          (let [expr (reduce (fn [ex right-expr]
                               (assoc right-expr :right ex))
                             fc
@@ -116,7 +113,7 @@
    (let [{tm :expr, ts :tokens} (term tokens)]
      (if (seq tm)
        (if (#{::s/greater ::s/greater-equal ::s/less ::s/less-equal} (:type (first ts)))
-         (recur (rest ts) (conj rights (BinaryExpr. (first ts) tm nil)))
+         (recur (rest ts) (conj rights (BinaryExpression. (first ts) tm nil)))
          (let [expr (reduce (fn [ex right-expr]
                               (assoc right-expr :right ex))
                             tm
@@ -131,7 +128,7 @@
    (let [{cp :expr, ts :tokens} (comparison tokens)]
      (if (seq cp)
        (if (#{::s/bang-equal ::s/equal-equal} (:type (first ts)))
-         (recur (rest ts) (conj rights (BinaryExpr. (first ts) cp nil)))
+         (recur (rest ts) (conj rights (BinaryExpression. (first ts) cp nil)))
          (let [expr (reduce (fn [ex right-expr]
                               (assoc right-expr :right ex))
                             cp
@@ -152,7 +149,7 @@
 (defn parse
   "Map a coll of tokens to an AST. Returns a map containing the following keys:
 
-  :expr - the root of the AST is an expr from lox.expr, e.g. GroupingExpr, BinaryExpr, etc.
+  :expr - the root of the AST is an expr from lox.expr, e.g. GroupingExpression, BinaryExpression, etc.
   :tokens - remaining tokens to parse
   :errors - a coll of parsing errors, or nil"
   [tokens]

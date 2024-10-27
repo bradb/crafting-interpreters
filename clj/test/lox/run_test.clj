@@ -3,7 +3,7 @@
              [lox.run :as lr]))
 
 (deftest run-primary-test
-  (are [x y] (= x (lr/run y))
+  (are [x y] (= x (lr/run (str "print " y ";")))
     "true" "true"
     "45" "45"
     "hello, world" "\"hello, world\""
@@ -12,13 +12,13 @@
     "42" "(42)"))
 
 (deftest run-unary-test
-  (is (= "-67" (lr/run "-67")))
-  (is (= "42" (lr/run "--42")))
-  (is (= "15" (lr/run "15")))
-  (is (= "true" (lr/run "!false"))))
+  (is (= "-67" (lr/run "print -67;")))
+  (is (= "42" (lr/run "print --42;")))
+  (is (= "15" (lr/run "print 15;")))
+  (is (= "true" (lr/run "print !false;"))))
 
 (deftest run-binary-test
-  (are [x y] (= x (lr/run y))
+  (are [x y] (= x (lr/run (str "print " y ";")))
     "2" "1 + 1"
     "0" "1 - 1"
     "5" "20 / 4"
@@ -31,12 +31,12 @@
     "true" "\"hello\" == \"hello\""))
 
 (deftest run-string-concat-test
-  (are [x y] (= x (lr/run y))
+  (are [x y] (= x (lr/run (str "print " y ";")))
     "foobar" "\"foo\" + \"bar\""
     "hello, world!" "\"hello,\" + \" world!\""))
 
 (deftest complex-exprs-test
-  (are [x y] (= x (lr/run y))
+  (are [x y] (= x (lr/run (str "print " y ";")))
     "6" "1 + 2 + 3"
     "24" "4 * 3 * (1 + 1)"
     "true" "8 + 12 == 36 - 16"
@@ -46,10 +46,13 @@
     "true" "(10 < 12) == (88 < 100)"))
 
 (deftest runtime-errors-test
-  (is (thrown-with-msg? clojure.lang.ExceptionInfo #"must be numbers" (lr/run "1 * false"))))
+  (is (thrown-with-msg? clojure.lang.ExceptionInfo #"must be numbers" (lr/run "print 1 * false;"))))
 
 (deftest run-parser-error-test
-  (is (thrown-with-msg? clojure.lang.ExceptionInfo #"error parsing input" (lr/run "(42"))))
+  (is (thrown-with-msg? clojure.lang.ExceptionInfo #"error parsing input" (lr/run "print (42;"))))
 
 (deftest run-lexer-error-test
-  (is (thrown-with-msg? clojure.lang.ExceptionInfo #"error parsing input" (lr/run "\"foo"))))
+  (is (thrown-with-msg? clojure.lang.ExceptionInfo #"error parsing input" (lr/run "print \"foo;"))))
+
+(deftest synchronise-after-parse-error-test
+  (is false))

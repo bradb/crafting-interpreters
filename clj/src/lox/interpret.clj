@@ -1,14 +1,14 @@
 (ns lox.interpret
   (:require [lox.scanner :as s])
-  (:import [lox.expr UnaryExpr GroupingExpr BinaryExpr LiteralExpr]))
+  (:import [lox.statement UnaryExpression GroupingExpression BinaryExpression LiteralExpression]))
 
 (defmulti eval-expr class)
 
-(defmethod eval-expr GroupingExpr
+(defmethod eval-expr GroupingExpression
   [{:keys [expr] :as _expr}]
   (eval-expr expr))
 
-(defmethod eval-expr BinaryExpr
+(defmethod eval-expr BinaryExpression
   [{:keys [oper left right] :as expr}]
   (let [le (eval-expr left)
         re (eval-expr right)]
@@ -62,7 +62,7 @@
       ::s/less
       (< le re))))
 
-(defmethod eval-expr UnaryExpr
+(defmethod eval-expr UnaryExpression
   [{:keys [oper right] :as _expr}]
   (case (:type oper)
     ::s/minus
@@ -71,7 +71,7 @@
     ::s/bang
     (not (eval-expr right))))
 
-(defmethod eval-expr LiteralExpr
+(defmethod eval-expr LiteralExpression
   [{:keys [val] :as _expr}]
   val)
 
