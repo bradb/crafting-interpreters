@@ -45,6 +45,19 @@
     "false" "(10 > 12) == (88 < 100)"
     "true" "(10 < 12) == (88 < 100)"))
 
+(deftest run-print-statement-test
+  (are [x y] (is (= x (lr/run y)))
+    "1\n" "print 1;"
+    "36\n" "print 6*6;"
+    "hello, world!\n" "print \"hello, world!\";"
+    "true\n" "print true;"
+    "nil\n" "print nil;"
+    "foobar\n" "print \"foo\" + \"bar\";"
+    "hi\nthere\n" "print \"hi\"; print \"there\";"))
+
+(deftest run-expressions-statement-test
+  (is (= "" (lr/run "print 1;"))))
+
 (deftest runtime-errors-test
   (is (thrown-with-msg? clojure.lang.ExceptionInfo #"must be numbers" (lr/run "print 1 * false;"))))
 

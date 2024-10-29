@@ -2,7 +2,9 @@
   (:require  [clojure.test :refer [deftest is are]]
              [lox.parse :as lp]
              [lox.scanner :as s])
-  (:import [lox.statement GroupingExpression BinaryExpression UnaryExpression LiteralExpression]))
+  (:import [lox.statement PrintStatement ExpressionStatement
+            GroupingExpression BinaryExpression
+            UnaryExpression LiteralExpression]))
 
 (defn- parse
   [s]
@@ -11,6 +13,20 @@
        :tokens
        lp/parse
        :expr))
+
+(deftest parse-print-statement-test
+  (are [x y] (= (parse x) y)
+    "print 1;" (PrintStatement. (LiteralExpression. 1.0))
+    "print \"foo\" + \"bar\";" (PrintStatement. (BinaryExpression. (s/token ::s/plus "+" nil 1)
+                                                                   (LiteralExpression. "foo")
+                                                                   (LiteralExpression. "bar")))))
+
+(deftest parse-expression-statement-test
+  (are [x y] (= (parse x) y)
+    "1;" (ExpressionStatement. (LiteralExpression. 1.0))
+    "\"foo\" + \"bar\";" (ExpressionStatement. (BinaryExpression. (s/token ::s/plus "+" nil 1)
+                                                                  (LiteralExpression. "foo")
+                                                                  (LiteralExpression. "bar")))))
 
 (deftest parse-primary-test
   (are [x y] (= (parse x) (LiteralExpression. y))

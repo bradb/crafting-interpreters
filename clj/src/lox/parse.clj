@@ -3,7 +3,8 @@
 (ns lox.parse
   "Parser for the Lox programming language."
   (:require [lox.scanner :as s])
-  (:import [lox.statement GroupingExpression BinaryExpression UnaryExpression LiteralExpression]))
+  (:import [lox.statement PrintStatement ExpressionStatement GroupingExpression
+            BinaryExpression UnaryExpression LiteralExpression]))
 
 (def literal? #{::s/number
                 ::s/true
@@ -146,10 +147,24 @@
           {:errors [(.getMessage e)], :tokens tokens}
           (throw e))))))
 
-(defn parse
-  "Map a coll of tokens to an AST. Returns a map containing the following keys:
+(defn- statement
+  [tokens]
+  (when (seq tokens)
+    (if (= ::s/print (:type (first tokens)))
+      (let [{expr :expr, rest-tokens :tokens, errors :errors} (expression (rest tokens))]
+        (if (seq expr)
+          (if (= ::s/semicolon (:type (first rest-tokens)))
+            {:statement (PrintStatement. expr), :errors nil, :tokens (rest rest-tokens)}
+            (throw (ex-info "missing semicolon after print statement"
+                            {:parse-error true, :tokens (discard-current-statement rest-tokens)})))
+          (throw (ex-info "missing expression for print statement"
+                          {:parse-error true, :tokens (discard-current-statement rest-tokens)}))))
+      (let []))))
 
-  :expr - the root of the AST is an expr from lox.expr, e.g. GroupingExpression, BinaryExpression, etc.
+(defn parse
+  "Map a coll of tokens to coll of statements. Each statement is a map containing the following keys:
+
+  :statement - the root of the AST, e.g. a PrintStatement, ExpressionStatement, etc.
   :tokens - remaining tokens to parse
   :errors - a coll of parsing errors, or nil"
   [tokens]
