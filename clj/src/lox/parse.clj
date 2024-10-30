@@ -154,12 +154,18 @@
       (let [{expr :expr, rest-tokens :tokens, errors :errors} (expression (rest tokens))]
         (if (seq expr)
           (if (= ::s/semicolon (:type (first rest-tokens)))
-            {:statement (PrintStatement. expr), :errors nil, :tokens (rest rest-tokens)}
+            {:statement (PrintStatement. expr), :errors errors, :tokens (rest rest-tokens)}
             (throw (ex-info "missing semicolon after print statement"
                             {:parse-error true, :tokens (discard-current-statement rest-tokens)})))
           (throw (ex-info "missing expression for print statement"
                           {:parse-error true, :tokens (discard-current-statement rest-tokens)}))))
-      (let []))))
+      (let [{expr :expr, tks :tokens, errs :errors} (expression tokens)]
+        (if (seq errs)
+          {:statement nil, :tokens (discard-current-statement tks), :errors errs}
+          (if (= ::s/semicolon (:type (first tks)))
+            {:statement (ExpressionStatement. expr), :tokens (rest tks), :errors errs}
+            (throw (ex-info "missing semicolon after expression"
+                            {:parse-error true, :tokens (discard-current-statement tks)}))))))))
 
 (defn parse
   "Map a coll of tokens to coll of statements. Each statement is a map containing the following keys:
@@ -168,6 +174,10 @@
   :tokens - remaining tokens to parse
   :errors - a coll of parsing errors, or nil"
   [tokens]
-  (expression tokens))
-
-
+  (loop [statements []
+         errors []
+         tokens tokens]
+    (if (seq tokens)
+      (let [{stmt :statement, errs :errors, tks :tokens} (statement tokens)]
+        (recur (conj statements stmt) (concat errors errs) tks))
+      {:statements statements, :errors errors})))
