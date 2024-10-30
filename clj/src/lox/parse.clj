@@ -168,10 +168,9 @@
                             {:parse-error true, :tokens (discard-current-statement tks)}))))))))
 
 (defn parse
-  "Map a coll of tokens to coll of statements. Each statement is a map containing the following keys:
+  "Map a coll of tokens to coll of statements. Returns a map with the following keys:
 
-  :statement - the root of the AST, e.g. a PrintStatement, ExpressionStatement, etc.
-  :tokens - remaining tokens to parse
+  :statements - a coll of statements (PrintStatement, ExpressionStatement, etc.)
   :errors - a coll of parsing errors, or nil"
   [tokens]
   (loop [statements []
