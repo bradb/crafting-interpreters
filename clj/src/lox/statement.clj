@@ -4,6 +4,7 @@
 (defrecord ExpressionStatement [expr])
 (defrecord VarStatement [identifier expr])
 
+(defrecord AssignmentExpression [identifier expr])
 (defrecord BinaryExpression [oper left right])
 (defrecord GroupingExpression [expr])
 (defrecord UnaryExpression [oper right])

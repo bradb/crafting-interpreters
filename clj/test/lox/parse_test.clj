@@ -2,10 +2,10 @@
   (:require  [clojure.test :refer [deftest is are]]
              [lox.parse :as lp]
              [lox.scanner :as s])
-  (:import [lox.statement PrintStatement ExpressionStatement
-            VarStatement GroupingExpression
-            BinaryExpression VariableExpression
-            UnaryExpression LiteralExpression]))
+  (:import [lox.statement AssignmentExpression PrintStatement
+            ExpressionStatement VarStatement GroupingExpression
+            BinaryExpression VariableExpression UnaryExpression
+            LiteralExpression]))
 
 (defn- parse
   [s]
@@ -29,20 +29,28 @@
                                                                    (LiteralExpression. "foo")
                                                                    (LiteralExpression. "bar")))]))
 
-(deftest parse-var-decl-statement-test
-  (letfn [(ident->token [s] (s/->Token ::s/identifier s nil 1))]
-    (is (= (parse "var x = 1;") [(VarStatement. (ident->token "x")
-                                                (LiteralExpression. 1.0))]))
-    (is (= (parse "var y = 2; print y;") [(VarStatement. (ident->token "y")
-                                                         (LiteralExpression. 2.0))
-                                          (PrintStatement. (VariableExpression. (ident->token "y")))]))
-    (is (= (parse "var z = 3 * 2;") [(VarStatement. (ident->token "z")
-                                                    (BinaryExpression. (s/token ::s/star "*" nil 1)
-                                                                       (LiteralExpression. 3.0)
-                                                                       (LiteralExpression. 2.0)))]))))
+(defn ident->token
+  [s]
+  (s/->Token ::s/identifier s nil 1))
 
-(deftest parse-multiple-statements-test
-  (is false))
+(deftest parse-var-decl-statement-test
+  (is (= (parse "var x = 1;") [(VarStatement. (ident->token "x")
+                                              (LiteralExpression. 1.0))]))
+  (is (= (parse "var y = 2; print y;") [(VarStatement. (ident->token "y")
+                                                       (LiteralExpression. 2.0))
+                                        (PrintStatement. (VariableExpression. (ident->token "y")))]))
+  (is (= (parse "var z = 3 * 2;") [(VarStatement. (ident->token "z")
+                                                  (BinaryExpression. (s/token ::s/star "*" nil 1)
+                                                                     (LiteralExpression. 3.0)
+                                                                     (LiteralExpression. 2.0)))])))
+
+(deftest parse-assignment-test
+  (is (= (parse "y = 1;") [(ExpressionStatement. (AssignmentExpression. (ident->token "y")
+                                                                        (LiteralExpression. 1.0)))]))
+  (is (= (parse "x = y = 1;") [(ExpressionStatement. (AssignmentExpression.
+                                                      (ident->token "x")
+                                                      (AssignmentExpression. (ident->token "y")
+                                                                             (LiteralExpression. 1.0))))])))
 
 (deftest parse-primary-test
   (are [x y] (= (parse x) (LiteralExpression. y))

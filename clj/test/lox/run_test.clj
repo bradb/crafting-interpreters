@@ -59,6 +59,56 @@ print x;
 var x = 16 * 10 / 16;
 print x;")))))
 
+(deftest assignment-test
+  (is (= "27.0\nhello, clojure\n"
+         (with-out-str (lr/run "
+var x = 27;
+print x;
+x = \"hello, clojure\";
+print x;")))))
+
+(deftest assignment-to-undefined-variable
+  (is (thrown-with-msg?
+       Exception
+       #"attempt to assign to undeclared variable 'y'"
+       (lr/run "
+var x = 27;
+y = \"hello, clojure\";
+"))))
+
+(deftest block-scope-test
+  (is (=
+       "inner a
+outer b
+global c
+outer a
+outer b
+global c
+global a
+global b
+global c"
+       (with-out-str (lr/run "
+var a = \"global a\";
+var b = \"global b\";
+var c = \"global c\";
+{
+  var a = \"outer a\";
+  var b = \"outer b\";
+  {
+    var a = \"inner a\";
+    print a;
+    print b;
+    print c;
+  }
+  print a;
+  print b;
+  print c;
+}
+print a;
+print b;
+print c;
+")))))
+
 (deftest run-print-statement-test
   (are [x y] (is (= x (with-out-str (lr/run y))))
     "1.0\n" "print 1;"

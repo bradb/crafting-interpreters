@@ -3,7 +3,7 @@
 (ns lox.parse
   "Parser for the Lox programming language."
   (:require [lox.scanner :as s])
-  (:import [lox.statement VarStatement VariableExpression
+  (:import [lox.statement VarStatement AssignmentExpression VariableExpression
             PrintStatement ExpressionStatement GroupingExpression
             BinaryExpression UnaryExpression LiteralExpression]))
 
@@ -137,9 +137,22 @@
            {:expr expr, :tokens ts}))
        {:expr nil, :tokens tokens}))))
 
+(defn- assignment
+  ([tokens]
+   (assignment tokens []))
+  ([tokens rights]
+   (if (= [::s/identifier ::s/equal] (->> tokens
+                                          (take 2)
+                                          (map :type)))
+     (recur (drop 2 tokens) (conj rights (first tokens)))
+     (let [{expr :expr, tks :tokens} (equality tokens)
+           assign-expr (reduce (fn assigns [acc x]
+                                 (AssignmentExpression. x acc)) expr (rseq rights))]
+       {:expr assign-expr, :tokens tks}))))
+
 (defn- expression
   [tokens]
-  (equality tokens))
+  (assignment tokens))
 
 (defn- statement
   [tokens]
