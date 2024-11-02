@@ -1,11 +1,12 @@
 (ns lox.interpret
   (:require [lox.scanner :as s])
-  (:import [lox.statement UnaryExpression GroupingExpression BinaryExpression LiteralExpression]))
+  (:import [lox.statement PrintStatement ExpressionStatement UnaryExpression
+            GroupingExpression BinaryExpression LiteralExpression]))
 
 (defmulti eval-expr class)
 
 (defmethod eval-expr GroupingExpression
-  [{:keys [expr] :as _expr}]
+  [{:keys [expr]}]
   (eval-expr expr))
 
 (defmethod eval-expr BinaryExpression
@@ -75,9 +76,15 @@
   [{:keys [val] :as _expr}]
   val)
 
+(defmulti eval-stmt class)
+
+(defmethod eval-stmt PrintStatement
+  [{:keys [expr]}]
+  (println (eval-expr expr)))
+
 (defn interpret
   "Recursively evaluate a Lox abstract syntax tree, `ast`.
 
-  The root of the tree is a lox.expr."
+  The root of the tree is a lox.statement (PrintStatement, ExpressionStatement, etc.)"
   [ast]
-  (eval-expr ast))
+  (eval-stmt ast))

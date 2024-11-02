@@ -46,9 +46,9 @@
     "true" "(10 < 12) == (88 < 100)"))
 
 (deftest run-print-statement-test
-  (are [x y] (is (= x (lr/run y)))
-    "1\n" "print 1;"
-    "36\n" "print 6*6;"
+  (are [x y] (is (= x (with-out-str (lr/run y))))
+    "1.0\n" "print 1;"
+    "36.0\n" "print 6*6;"
     "hello, world!\n" "print \"hello, world!\";"
     "true\n" "print true;"
     "nil\n" "print nil;"
