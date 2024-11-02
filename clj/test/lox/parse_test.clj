@@ -3,7 +3,8 @@
              [lox.parse :as lp]
              [lox.scanner :as s])
   (:import [lox.statement PrintStatement ExpressionStatement
-            GroupingExpression BinaryExpression
+            VarStatement GroupingExpression
+            BinaryExpression VariableExpression
             UnaryExpression LiteralExpression]))
 
 (defn- parse
@@ -27,6 +28,17 @@
     "\"foo\" + \"bar\";" [(ExpressionStatement. (BinaryExpression. (s/token ::s/plus "+" nil 1)
                                                                    (LiteralExpression. "foo")
                                                                    (LiteralExpression. "bar")))]))
+
+(deftest parse-var-decl-statement-test
+  (letfn [(ident->token [s] (s/->Token ::s/identifier s nil 1))]
+    (is (= (parse "var x = 1;") [(VarStatement. (ident->token "x")
+                                                (LiteralExpression. 1.0))]))
+    (is (= (parse "var y = 2; print y;") [(VarStatement. (ident->token "y")
+                                                         (LiteralExpression. 2.0))
+                                          (PrintStatement. (VariableExpression. (ident->token "y")))]))))
+
+(deftest parse-multiple-statements-test
+  (is false))
 
 (deftest parse-primary-test
   (are [x y] (= (parse x) (LiteralExpression. y))
@@ -124,6 +136,11 @@
        (parse "5 + 3 / 10 != 1 - 2"))))
 
 (deftest parsing-errors-test
+  (let [{:keys [errors tokens expr]} (-> "var 1;"
+                                         s/scan
+                                         :tokens
+                                         lp/parse)]
+    (is false "FIXME"))
   (let [{:keys [errors tokens expr]} (-> "(3 + 1"
                                          s/scan
                                          :tokens

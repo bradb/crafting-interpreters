@@ -45,6 +45,12 @@
     "false" "(10 > 12) == (88 < 100)"
     "true" "(10 < 12) == (88 < 100)"))
 
+(deftest var-decl-test
+  (are [x y z] (= x (with-out-str (lr/run (str x "\n" y))))
+    "var x = 6;" "print x;" "6.0\n"
+    "var y = (5 + 3) / 2;" "print y;" "4.0\n"
+    "var z = !(10 > 5);" "print z;" "true\n"))
+
 (deftest run-print-statement-test
   (are [x y] (is (= x (with-out-str (lr/run y))))
     "1.0\n" "print 1;"

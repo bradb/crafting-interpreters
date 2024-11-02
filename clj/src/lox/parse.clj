@@ -3,7 +3,8 @@
 (ns lox.parse
   "Parser for the Lox programming language."
   (:require [lox.scanner :as s])
-  (:import [lox.statement PrintStatement ExpressionStatement GroupingExpression
+  (:import [lox.statement VarStatement VariableExpression
+            PrintStatement ExpressionStatement GroupingExpression
             BinaryExpression UnaryExpression LiteralExpression]))
 
 (def literal? #{::s/number
@@ -16,13 +17,16 @@
 
 (defn- drop-current-statement
   [tokens]
-  nil)
+  (let [ts (drop-while #(not= (:type %) ::s/semicolon) tokens)]
+    (if (= (:type (first ts)) ::s/semicolon)
+      (rest ts)
+      ts)))
 
 (defn- primary
   [tokens]
-  (when-let [pt (first tokens)]
+  (when-let [tk (first tokens)]
     (cond
-      (= ::s/left-paren (:type pt))
+      (= ::s/left-paren (:type tk))
       (let [{rest-tokens :tokens, expr :expr} (expression (rest tokens))]
         (if (seq expr)
           (if (= ::s/right-paren (->> rest-tokens
@@ -34,16 +38,19 @@
           (throw (ex-info "missing expression after '('", {:parse-error true
                                                            :tokens (drop-current-statement tokens)}))))
 
-      (literal? (:type pt))
-      (let [literal (case (:type pt)
+      (literal? (:type tk))
+      (let [literal (case (:type tk)
                       ::s/true
                       true
 
                       ::s/false
                       false
 
-                      (:literal pt))]
-        {:expr (LiteralExpression. literal), :tokens (rest tokens)}))))
+                      (:literal tk))]
+        {:expr (LiteralExpression. literal), :tokens (rest tokens)})
+
+      (= ::s/identifier (:type tk))
+      {:expr (VariableExpression. tk), :tokens (rest tokens)})))
 
 (defn- unary
   ([tokens]
@@ -65,13 +72,6 @@
        :else
        nil))))
 
-(defn- discard-current-statement
-  [tokens]
-  (let [ts (drop-while #(not= (:type %) ::s/semicolon) tokens)]
-    (if (= (:type (first ts)) ::s/semicolon)
-      (rest ts)
-      ts)))
-
 (defn- factor
   ([tokens]
    (factor tokens []))
@@ -89,7 +89,7 @@
        (let [[_ op] (last (seq chunks))]
          (if (seq op)
            (throw (ex-info (str "expected expression after '" (:lexeme op) "'")
-                           {:parse-error true, :tokens (discard-current-statement tokens)}))
+                           {:parse-error true, :tokens (drop-current-statement tokens)}))
            {:expr ex, :tokens ts}))))))
 
 (defn- term
@@ -139,33 +139,44 @@
 
 (defn- expression
   [tokens]
-  (try
-    (equality tokens)
-    (catch Exception e
-      (let [{:keys [parse-error tokens]} (ex-data e)]
-        (if parse-error
-          {:errors [(.getMessage e)], :tokens tokens}
-          (throw e))))))
+  (equality tokens))
 
 (defn- statement
   [tokens]
   (when (seq tokens)
     (if (= ::s/print (:type (first tokens)))
-      (let [{expr :expr, rest-tokens :tokens, errors :errors} (expression (rest tokens))]
+      (let [{expr :expr, rest-tokens :tokens} (expression (rest tokens))]
         (if (seq expr)
           (if (= ::s/semicolon (:type (first rest-tokens)))
-            {:statement (PrintStatement. expr), :errors errors, :tokens (rest rest-tokens)}
+            {:statement (PrintStatement. expr), :tokens (rest rest-tokens)}
             (throw (ex-info "missing semicolon after print statement"
-                            {:parse-error true, :tokens (discard-current-statement rest-tokens)})))
+                            {:parse-error true, :tokens (drop-current-statement rest-tokens)})))
           (throw (ex-info "missing expression for print statement"
-                          {:parse-error true, :tokens (discard-current-statement rest-tokens)}))))
-      (let [{expr :expr, tks :tokens, errs :errors} (expression tokens)]
-        (if (seq errs)
-          {:statement nil, :tokens (discard-current-statement tks), :errors errs}
-          (if (= ::s/semicolon (:type (first tks)))
-            {:statement (ExpressionStatement. expr), :tokens (rest tks), :errors errs}
-            (throw (ex-info "missing semicolon after expression"
-                            {:parse-error true, :tokens (discard-current-statement tks)}))))))))
+                          {:parse-error true, :tokens (drop-current-statement rest-tokens)}))))
+      (let [{expr :expr, tks :tokens} (expression tokens)]
+        (if (= ::s/semicolon (:type (first tks)))
+          {:statement (ExpressionStatement. expr), :tokens (rest tks)}
+          (throw (ex-info "missing semicolon after expression"
+                          {:parse-error true, :tokens (drop-current-statement tks)})))))))
+
+(defn- declaration
+  [tokens]
+  (if (= ::s/var (:type (first tokens)))
+    (let [[maybe-identifier maybe-oper & rest-tokens] (rest tokens)]
+      (case (mapv :type [maybe-identifier maybe-oper])
+            [::s/identifier ::s/equal]
+            (let [{expr :expr, tks :tokens} (expression rest-tokens)]
+              (if (= ::s/semicolon (:type (first tks)))
+                {:statement (VarStatement. maybe-identifier expr), :tokens (rest tks)}
+                (throw (ex-info "missing semicolon after expression"
+                                {:parse-error true, :tokens (drop-current-statement tks)}))))
+
+            [::s/identifier ::s/semicolon]
+            {:statement (VarStatement. maybe-identifier nil), :tokens rest-tokens}
+
+            (throw (ex-info "var declaration must be of the form 'var IDENTIFIER;' or 'var IDENTIFIER = EXPR;'"
+                            {:parse-error true, :tokens (drop-current-statement rest-tokens)}))))
+    (statement tokens)))
 
 (defn parse
   "Map a coll of tokens to coll of statements. Returns a map with the following keys:
@@ -177,6 +188,6 @@
          errors []
          tokens tokens]
     (if (seq tokens)
-      (let [{stmt :statement, errs :errors, tks :tokens} (statement tokens)]
+      (let [{stmt :statement, errs :errors, tks :tokens} (declaration tokens)]
         (recur (conj statements stmt) (concat errors errs) tks))
       {:statements statements, :errors errors})))
