@@ -51,6 +51,14 @@
     "var y = (5 + 3) / 2;" "print y;" "4.0\n"
     "var z = !(10 > 20);" "print z;" "true\n"))
 
+(deftest redefine-a-var-test
+  (is (= "4.0\n10.0\n"
+         (with-out-str (lr/run "
+var x = 2 + 3 - 1;
+print x;
+var x = 16 * 10 / 16;
+print x;")))))
+
 (deftest run-print-statement-test
   (are [x y] (is (= x (with-out-str (lr/run y))))
     "1.0\n" "print 1;"
