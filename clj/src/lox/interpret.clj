@@ -82,6 +82,11 @@
   [{:keys [expr]}]
   (println (eval-expr expr)))
 
+(defmethod eval-stmt ExpressionStatement
+  [{:keys [expr]}]
+  (eval-expr expr)
+  nil)
+
 (defn interpret
   "Recursively evaluate a Lox abstract syntax tree, `ast`.
 

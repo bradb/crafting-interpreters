@@ -56,7 +56,7 @@
     "hi\nthere\n" "print \"hi\"; print \"there\";"))
 
 (deftest run-expressions-statement-test
-  (is (= "" (lr/run "print 1;"))))
+  (is (= "" (with-out-str (lr/run "1;")))))
 
 (deftest runtime-errors-test
   (is (thrown-with-msg? clojure.lang.ExceptionInfo #"must be numbers" (lr/run "print 1 * false;"))))
