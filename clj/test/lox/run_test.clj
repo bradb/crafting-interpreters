@@ -47,6 +47,7 @@
 
 (deftest var-decl-test
   (are [x y z] (= z (with-out-str (lr/run (str x "\n" y))))
+    "var n;" "print n;" "nil\n"
     "var x = 6;" "print x;" "6.0\n"
     "var y = (5 + 3) / 2;" "print y;" "4.0\n"
     "var z = !(10 > 20);" "print z;" "true\n"))
@@ -66,6 +67,15 @@ var x = 27;
 print x;
 x = \"hello, clojure\";
 print x;")))))
+
+(deftest multiple-assign-test
+  (is (= "foobar\nfoobar\n"
+         (with-out-str (lr/run "
+var x;
+var y;
+x = y = \"foobar\";
+print x;
+print y;")))))
 
 (deftest assignment-to-undefined-variable
   (is (thrown-with-msg?

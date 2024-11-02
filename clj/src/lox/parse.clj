@@ -185,7 +185,7 @@
                                 {:parse-error true, :tokens (drop-current-statement tks)}))))
 
             [::s/identifier ::s/semicolon]
-            {:statement (VarStatement. maybe-identifier nil), :tokens rest-tokens}
+            {:statement (VarStatement. maybe-identifier (LiteralExpression. nil)), :tokens rest-tokens}
 
             (throw (ex-info "var declaration must be of the form 'var IDENTIFIER;' or 'var IDENTIFIER = EXPR;'"
                             {:parse-error true, :tokens (drop-current-statement rest-tokens)}))))

@@ -1,8 +1,8 @@
 (ns lox.interpret
   (:require [lox.scanner :as s])
-  (:import [lox.statement PrintStatement ExpressionStatement VarStatement
-            UnaryExpression GroupingExpression BinaryExpression VariableExpression
-            LiteralExpression]))
+  (:import [lox.statement AssignmentExpression PrintStatement ExpressionStatement
+            VarStatement UnaryExpression GroupingExpression BinaryExpression
+            VariableExpression LiteralExpression]))
 
 (def ^:private ^:dynamic *state* (atom {}))
 
@@ -74,6 +74,18 @@
 
     ::s/bang
     (not (eval-expr right))))
+
+(defmethod eval-expr AssignmentExpression
+  [{:keys [identifier expr]}]
+  (let [var-name (:lexeme identifier)
+        m (swap! *state* (fn [m]
+                         (if (contains? m var-name)
+                           (assoc m var-name (eval-expr expr))
+                           (throw (ex-info (str "attempt to assign to undeclared variable '"
+                                                var-name
+                                                "'")
+                                           {:runtime-error true})))))]
+    (get m var-name)))
 
 (defmethod eval-expr LiteralExpression
   [{:keys [val] :as _expr}]

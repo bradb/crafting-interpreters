@@ -34,6 +34,8 @@
   (s/->Token ::s/identifier s nil 1))
 
 (deftest parse-var-decl-statement-test
+  (is (= (parse "var x;") [(VarStatement. (ident->token "x")
+                                          (LiteralExpression. nil))]))
   (is (= (parse "var x = 1;") [(VarStatement. (ident->token "x")
                                               (LiteralExpression. 1.0))]))
   (is (= (parse "var y = 2; print y;") [(VarStatement. (ident->token "y")
