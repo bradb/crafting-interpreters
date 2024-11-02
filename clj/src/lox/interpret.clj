@@ -1,7 +1,10 @@
 (ns lox.interpret
   (:require [lox.scanner :as s])
-  (:import [lox.statement PrintStatement ExpressionStatement UnaryExpression
-            GroupingExpression BinaryExpression LiteralExpression]))
+  (:import [lox.statement PrintStatement ExpressionStatement VarStatement
+            UnaryExpression GroupingExpression BinaryExpression VariableExpression
+            LiteralExpression]))
+
+(def ^:private ^:dynamic *state* (atom {}))
 
 (defmulti eval-expr class)
 
@@ -76,6 +79,20 @@
   [{:keys [val] :as _expr}]
   val)
 
+(defmethod eval-expr VariableExpression
+  [expr]
+  (let [lexeme (get-in expr [:identifier :lexeme])]
+    (if (seq lexeme)
+      (let [state @*state*]
+        (if (contains? state lexeme)
+          (get state lexeme)
+          (throw (ex-info
+                  (str "'" lexeme "' is not defined")
+                  {:runtime-error true}))))
+      (throw (ex-info
+              "missing identifier for variable expression"
+              {:runtime-error true})))))
+
 (defmulti eval-stmt class)
 
 (defmethod eval-stmt PrintStatement
@@ -87,9 +104,16 @@
   (eval-expr expr)
   nil)
 
-(defn interpret
-  "Recursively evaluate a Lox abstract syntax tree, `ast`.
+(defmethod eval-stmt VarStatement
+  [{:keys [identifier expr]}]
+  (if-let [var-name (:lexeme identifier)]
+    (swap! *state* assoc var-name (eval-expr expr))
+    (throw (ex-info "missing identifier for var statement"
+                    {:runtime-error true}))))
 
-  The root of the tree is a lox.statement (PrintStatement, ExpressionStatement, etc.)"
+(defn interpret
+  "Evaluate the Lox statement contained in `ast`.
+
+  `ast` a lox.statement (PrintStatement, ExpressionStatement, etc.)"
   [ast]
   (eval-stmt ast))

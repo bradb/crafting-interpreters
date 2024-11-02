@@ -35,7 +35,11 @@
                                                 (LiteralExpression. 1.0))]))
     (is (= (parse "var y = 2; print y;") [(VarStatement. (ident->token "y")
                                                          (LiteralExpression. 2.0))
-                                          (PrintStatement. (VariableExpression. (ident->token "y")))]))))
+                                          (PrintStatement. (VariableExpression. (ident->token "y")))]))
+    (is (= (parse "var z = 3 * 2;") [(VarStatement. (ident->token "z")
+                                                    (BinaryExpression. (s/token ::s/star "*" nil 1)
+                                                                       (LiteralExpression. 3.0)
+                                                                       (LiteralExpression. 2.0)))]))))
 
 (deftest parse-multiple-statements-test
   (is false))
