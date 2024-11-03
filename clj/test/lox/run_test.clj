@@ -142,17 +142,17 @@ var a = 2;
 print a;
 print b;
 ")))
-    (is (= *out* "2\nhello\n2\n")))
+    (is (= *out* "2\nhello\n2\n"))))
 
-  (deftest run-print-statement-test
-    (are [x y] (is (= x (with-out-str (lr/run y))))
-      "1.0\n" "print 1;"
-      "36.0\n" "print 6*6;"
-      "hello, world!\n" "print \"hello, world!\";"
-      "true\n" "print true;"
-      "nil\n" "print nil;"
-      "foobar\n" "print \"foo\" + \"bar\";"
-      "hi\nthere\n" "print \"hi\"; print \"there\";")))
+(deftest run-print-statement-test
+  (are [x y] (is (= x (with-out-str (lr/run y))))
+    "1.0\n" "print 1;"
+    "36.0\n" "print 6*6;"
+    "hello, world!\n" "print \"hello, world!\";"
+    "true\n" "print true;"
+    "nil\n" "print nil;"
+    "foobar\n" "print \"foo\" + \"bar\";"
+    "hi\nthere\n" "print \"hi\"; print \"there\";"))
 
 (deftest run-expressions-statement-test
   (is (= "" (with-out-str (lr/run "1;")))))
