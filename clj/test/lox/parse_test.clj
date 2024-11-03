@@ -2,7 +2,7 @@
   (:require  [clojure.test :refer [deftest is are]]
              [lox.parse :as lp]
              [lox.scanner :as s])
-  (:import [lox.statement AssignmentExpression PrintStatement
+  (:import [lox.statement AssignmentExpression Block PrintStatement
             ExpressionStatement VarStatement GroupingExpression
             BinaryExpression VariableExpression UnaryExpression
             LiteralExpression]))
@@ -53,6 +53,22 @@
                                                       (ident->token "x")
                                                       (AssignmentExpression. (ident->token "y")
                                                                              (LiteralExpression. 1.0))))])))
+
+(deftest parse-block-simple-test
+  (is (= (parse "{ print a; }")
+         [(Block. [(PrintStatement. (VariableExpression. (ident->token "a")))])])))
+
+(deftest parse-block-test
+  (is (= (parse "var a = 1; { print a; }")
+         [(VarStatement. (ident->token "a") (LiteralExpression. 1.0))
+          (Block. [(PrintStatement. (VariableExpression. (ident->token "a")))])])))
+
+(deftest parse-nested-blocks-test
+  (is (= (parse "var a = 1; var b = 2; { print a; { print b; }}")
+         [(VarStatement. (ident->token "a") (LiteralExpression. 1.0))
+          (VarStatement. (ident->token "b") (LiteralExpression. 2.0))
+          (Block. [(PrintStatement. (VariableExpression. (ident->token "a")))
+                   (Block. [(PrintStatement. (VariableExpression. (ident->token "b")))])])])))
 
 (deftest parse-primary-test
   (are [x y] (= (parse x) (LiteralExpression. y))

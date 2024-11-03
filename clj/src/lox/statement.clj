@@ -1,5 +1,6 @@
 (ns lox.statement)
 
+(defrecord Block [declarations])
 (defrecord PrintStatement [expr])
 (defrecord ExpressionStatement [expr])
 (defrecord VarStatement [identifier expr])

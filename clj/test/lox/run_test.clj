@@ -130,6 +130,17 @@ var a = 2;
 print a;
 ")))))
 
+(deftest redeclared-var-val-reset-after-exiting-block-test
+  (is (= "2\n5\n5\n" (with-out-str (lr/run "
+var a = 2;
+{
+  print a;
+  var a = 5;
+  print a;
+}
+print a;
+")))))
+
 (deftest var-decl-disappears-after-exiting-block-test
   (binding [*out* (new java.io.StringWriter)]
     (is (thrown-with-msg? Exception #"reference to undeclared variable 'b'" (lr/run "

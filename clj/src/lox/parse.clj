@@ -3,9 +3,10 @@
 (ns lox.parse
   "Parser for the Lox programming language."
   (:require [lox.scanner :as s])
-  (:import [lox.statement VarStatement AssignmentExpression VariableExpression
-            PrintStatement ExpressionStatement GroupingExpression
-            BinaryExpression UnaryExpression LiteralExpression]))
+  (:import [lox.statement Block VarStatement AssignmentExpression
+            VariableExpression PrintStatement ExpressionStatement
+            BinaryExpression UnaryExpression LiteralExpression
+            GroupingExpression]))
 
 (def literal? #{::s/number
                 ::s/true
@@ -154,10 +155,14 @@
   [tokens]
   (assignment tokens))
 
+(declare declaration) ;; because why not
+
 (defn- statement
   [tokens]
   (when (seq tokens)
-    (if (= ::s/print (:type (first tokens)))
+    (case (:type (first tokens))
+
+      ::s/print
       (let [{expr :expr, rest-tokens :tokens} (expression (rest tokens))]
         (if (seq expr)
           (if (= ::s/semicolon (:type (first rest-tokens)))
@@ -166,6 +171,23 @@
                             {:parse-error true, :tokens (drop-current-statement rest-tokens)})))
           (throw (ex-info "missing expression for print statement"
                           {:parse-error true, :tokens (drop-current-statement rest-tokens)}))))
+
+      ::s/left-brace
+      (loop [{stmt :statement, tks :tokens} (declaration (rest tokens))
+             decls []]
+        (case [(nil? stmt) (= ::s/right-brace (:type (first tks)))]
+          [true true]
+          {:statement (Block. decls), :tokens (rest tks)}
+
+          [true false]
+          (throw (ex-info "expected closing brace '}'", {:parse-error true}))
+
+          [false true]
+          {:statement (Block. (conj decls stmt)), :tokens (rest tks)}
+
+          [false false]
+          (recur (declaration tks) (conj decls stmt))))
+
       (let [{expr :expr, tks :tokens} (expression tokens)]
         (if (= ::s/semicolon (:type (first tks)))
           {:statement (ExpressionStatement. expr), :tokens (rest tks)}
