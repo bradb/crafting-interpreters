@@ -58,6 +58,9 @@
   (is (= (parse "{ print a; }")
          [(Block. [(PrintStatement. (VariableExpression. (ident->token "a")))])])))
 
+(deftest parse-block-missing-closing-brace-test
+  (is (thrown-with-msg? Exception #"expected closing brace" (parse "{ print a; "))))
+
 (deftest parse-block-test
   (is (= (parse "var a = 1; { print a; }")
          [(VarStatement. (ident->token "a") (LiteralExpression. 1.0))
