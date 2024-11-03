@@ -56,7 +56,7 @@
   (is (= "4.0\n10.0\n"
          (with-out-str (lr/run "
 var x = 2 + 3 - 1;
-print x;
+-with-msgprint x;
 var x = 16 * 10 / 16;
 print x;")))))
 
@@ -119,15 +119,40 @@ print b;
 print c;
 ")))))
 
-(deftest run-print-statement-test
-  (are [x y] (is (= x (with-out-str (lr/run y))))
-    "1.0\n" "print 1;"
-    "36.0\n" "print 6*6;"
-    "hello, world!\n" "print \"hello, world!\";"
-    "true\n" "print true;"
-    "nil\n" "print nil;"
-    "foobar\n" "print \"foo\" + \"bar\";"
-    "hi\nthere\n" "print \"hi\"; print \"there\";"))
+(deftest assigned-val-sticks-after-exiting-block-test
+  (is (= "2\n5\n5\n" (with-out-str (lr/run "
+var a = 2;
+{
+  print a;
+  a = 5;
+  print a;
+}
+print a;
+")))))
+
+(deftest var-decl-disappears-after-exiting-block-test
+  (binding [*out* (new java.io.StringWriter)]
+    (is (thrown-with-msg? Exception #"reference to undeclared variable 'b'" (lr/run "
+var a = 2;
+{
+  var b = \"hello\";
+  print a;
+  print b;
+}
+print a;
+print b;
+")))
+    (is (= *out* "2\nhello\n2\n")))
+
+  (deftest run-print-statement-test
+    (are [x y] (is (= x (with-out-str (lr/run y))))
+      "1.0\n" "print 1;"
+      "36.0\n" "print 6*6;"
+      "hello, world!\n" "print \"hello, world!\";"
+      "true\n" "print true;"
+      "nil\n" "print nil;"
+      "foobar\n" "print \"foo\" + \"bar\";"
+      "hi\nthere\n" "print \"hi\"; print \"there\";")))
 
 (deftest run-expressions-statement-test
   (is (= "" (with-out-str (lr/run "1;")))))
