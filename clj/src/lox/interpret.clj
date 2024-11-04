@@ -2,7 +2,7 @@
   (:require [lox.scanner :as s])
   (:import [lox.statement AssignmentExpression PrintStatement ExpressionStatement
             VarStatement UnaryExpression GroupingExpression BinaryExpression
-            VariableExpression LiteralExpression]))
+            Block VariableExpression LiteralExpression]))
 
 (defrecord Scope [outer sym->val])
 
@@ -144,6 +144,11 @@
   [{:keys [expr]}]
   (eval-expr expr)
   nil)
+
+(defmethod eval-stmt Block
+  [{:keys [declarations]}]
+  (binding [*state* (atom (map->Scope {:sym->val {}, :outer @*state*}))]
+    (run! eval-stmt declarations)))
 
 (defmethod eval-stmt VarStatement
   [{:keys [identifier expr]}]

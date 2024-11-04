@@ -2,27 +2,31 @@
   (:require  [clojure.test :refer [deftest is are]]
              [lox.run :as lr]))
 
+(defn run->str
+  [s]
+  (with-out-str (lr/run s)))
+
 (deftest run-primary-test
-  (are [x y] (= x (lr/run (str "print " y ";")))
+  (are [x y] (= (str x "\n") (run->str (str "print " y ";")))
     "true" "true"
-    "45" "45"
+    "45.0" "45"
     "hello, world" "\"hello, world\""
     "nil" "nil"
     "false" "false"
-    "42" "(42)"))
+    "42.0" "(42)"))
 
 (deftest run-unary-test
-  (is (= "-67" (lr/run "print -67;")))
-  (is (= "42" (lr/run "print --42;")))
-  (is (= "15" (lr/run "print 15;")))
-  (is (= "true" (lr/run "print !false;"))))
+  (is (= "-67.0\n" (run->str "print -67;")))
+  (is (= "42.0\n" (run->str "print --42;")))
+  (is (= "15.0\n" (run->str "print 15;")))
+  (is (= "true\n" (run->str "print !false;"))))
 
 (deftest run-binary-test
-  (are [x y] (= x (lr/run (str "print " y ";")))
-    "2" "1 + 1"
-    "0" "1 - 1"
-    "5" "20 / 4"
-    "200" "5 * 40"
+  (are [x y] (= (str x "\n") (run->str (str "print " y ";")))
+    "2.0" "1 + 1"
+    "0.0" "1 - 1"
+    "5.0" "20 / 4"
+    "200.0" "5 * 40"
     "true" "10 > 9"
     "false" "10 >= 11"
     "true" "1918 < 7171"
@@ -31,17 +35,17 @@
     "true" "\"hello\" == \"hello\""))
 
 (deftest run-string-concat-test
-  (are [x y] (= x (lr/run (str "print " y ";")))
-    "foobar" "\"foo\" + \"bar\""
-    "hello, world!" "\"hello,\" + \" world!\""))
+  (are [x y] (= x (run->str (str "print " y ";")))
+    "foobar\n" "\"foo\" + \"bar\""
+    "hello, world!\n" "\"hello,\" + \" world!\""))
 
 (deftest complex-exprs-test
-  (are [x y] (= x (lr/run (str "print " y ";")))
-    "6" "1 + 2 + 3"
-    "24" "4 * 3 * (1 + 1)"
+  (are [x y] (= (str x "\n") (run->str (str "print " y ";")))
+    "6.0" "1 + 2 + 3"
+    "24.0" "4 * 3 * (1 + 1)"
     "true" "8 + 12 == 36 - 16"
     "false" "8 + 12 == 36 - 17"
-    "342" "7 + (12 * (4 - 1)) + (300 - 1)"
+    "342.0" "7 + (12 * (4 - 1)) + (300 - 1)"
     "false" "(10 > 12) == (88 < 100)"
     "true" "(10 < 12) == (88 < 100)"))
 
@@ -96,7 +100,8 @@ outer b
 global c
 global a
 global b
-global c"
+global c
+"
        (with-out-str (lr/run "
 var a = \"global a\";
 var b = \"global b\";
@@ -120,7 +125,7 @@ print c;
 ")))))
 
 (deftest assigned-val-sticks-after-exiting-block-test
-  (is (= "2\n5\n5\n" (with-out-str (lr/run "
+  (is (= "2.0\n5.0\n5.0\n" (with-out-str (lr/run "
 var a = 2;
 {
   print a;
