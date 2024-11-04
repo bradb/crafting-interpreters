@@ -4,9 +4,49 @@
             VarStatement UnaryExpression GroupingExpression BinaryExpression
             VariableExpression LiteralExpression]))
 
-(def ^:private ^:dynamic *state* (atom {}))
+(defrecord Scope [outer sym->val])
+
+(def ^:private ^:dynamic *state* (atom nil))
+
+(declare eval-expr)
+
+(defn- declare-variable!
+  [k expr]
+  (swap! *state* assoc-in [:sym->val k] (eval-expr expr)))
+
+(comment
+  (binding [*state* (atom (map->Scope {:outer nil, :sym->val {}}))]
+    (declare-variable! "n" nil)
+    @*state*))
+
+(defn- assign-variable!
+  [k expr]
+  (swap! *state*
+         (fn [st]
+           (loop [{:keys [sym->val outer]} st
+                  ks []]
+             (if (nil? sym->val)
+               (throw (ex-info (str "attempt to assign to undeclared variable '" k "'")
+                               {:runtime-error true}))
+               (if (contains? sym->val k)
+                 (assoc-in st (conj ks :sym->val k) (eval-expr expr))
+                 (recur outer (conj ks :outer))))))))
+
+(defn- variable->value
+  [k]
+  (loop [{:keys [sym->val outer]} @*state*]
+    (if (nil? sym->val)
+      (throw (ex-info (str "reference to undeclared variable '" k "'")
+                      {:runtime-error true}))
+      (if (contains? sym->val k)
+        (get sym->val k)
+        (recur outer)))))
 
 (defmulti eval-expr class)
+
+(defmethod eval-expr nil
+  [& _]
+  nil)
 
 (defmethod eval-expr GroupingExpression
   [{:keys [expr]}]
@@ -77,15 +117,9 @@
 
 (defmethod eval-expr AssignmentExpression
   [{:keys [identifier expr]}]
-  (let [var-name (:lexeme identifier)
-        m (swap! *state* (fn [m]
-                         (if (contains? m var-name)
-                           (assoc m var-name (eval-expr expr))
-                           (throw (ex-info (str "attempt to assign to undeclared variable '"
-                                                var-name
-                                                "'")
-                                           {:runtime-error true})))))]
-    (get m var-name)))
+  (let [var-name (:lexeme identifier)]
+    (assign-variable! var-name expr)
+    (variable->value var-name)))
 
 (defmethod eval-expr LiteralExpression
   [{:keys [val] :as _expr}]
@@ -95,12 +129,7 @@
   [expr]
   (let [lexeme (get-in expr [:identifier :lexeme])]
     (if (seq lexeme)
-      (let [state @*state*]
-        (if (contains? state lexeme)
-          (get state lexeme)
-          (throw (ex-info
-                  (str "'" lexeme "' is not defined")
-                  {:runtime-error true}))))
+      (variable->value lexeme)
       (throw (ex-info
               "missing identifier for variable expression"
               {:runtime-error true})))))
@@ -119,13 +148,14 @@
 (defmethod eval-stmt VarStatement
   [{:keys [identifier expr]}]
   (if-let [var-name (:lexeme identifier)]
-    (swap! *state* assoc var-name (eval-expr expr))
+    (declare-variable! var-name expr)
     (throw (ex-info "missing identifier for var statement"
                     {:runtime-error true}))))
 
 (defn interpret
-  "Evaluate the Lox statement contained in `ast`.
+  "Evaluate statements. Statements is a seq of ASTs.
 
-  `ast` a lox.statement (PrintStatement, ExpressionStatement, etc.)"
-  [ast]
-  (eval-stmt ast))
+  Each AST is a lox.statement (PrintStatement, ExpressionStatement, etc.)"
+  [statements]
+  (binding [*state* (atom (map->Scope {:outer nil, :sym->val {}}))]
+    (run! eval-stmt statements)))

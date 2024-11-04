@@ -56,7 +56,7 @@
   (is (= "4.0\n10.0\n"
          (with-out-str (lr/run "
 var x = 2 + 3 - 1;
--with-msgprint x;
+print x;
 var x = 16 * 10 / 16;
 print x;")))))
 

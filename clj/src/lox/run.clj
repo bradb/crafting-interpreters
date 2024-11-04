@@ -17,6 +17,6 @@
         (if (seq parse-errors)
           (throw (ex-info (str "error parsing input")
                           {:parse-error true, :errors parse-errors}))
-          (run! li/interpret stmts))))))
+          (li/interpret stmts))))))
 
 
