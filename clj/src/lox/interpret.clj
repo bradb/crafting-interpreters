@@ -4,43 +4,40 @@
             VarStatement UnaryExpression GroupingExpression BinaryExpression
             Block VariableExpression LiteralExpression]))
 
-(defrecord Scope [outer sym->val])
-
-(def ^:private ^:dynamic *state* (atom nil))
+(def ^:private ^:dynamic *state* nil)
 
 (declare eval-expr)
 
 (defn- declare-variable!
   [k expr]
-  (swap! *state* assoc-in [:sym->val k] (eval-expr expr)))
-
-(comment
-  (binding [*state* (atom (map->Scope {:outer nil, :sym->val {}}))]
-    (declare-variable! "n" nil)
-    @*state*))
+  (if-let [inner-scope (first *state*)]
+    (swap! inner-scope assoc k (eval-expr expr))
+    (throw (ex-info "failed to find inner scope for variable declaration"
+                    {:runtime-error true}))))
 
 (defn- assign-variable!
   [k expr]
-  (swap! *state*
-         (fn [st]
-           (loop [{:keys [sym->val outer]} st
-                  ks []]
-             (if (nil? sym->val)
-               (throw (ex-info (str "attempt to assign to undeclared variable '" k "'")
-                               {:runtime-error true}))
-               (if (contains? sym->val k)
-                 (assoc-in st (conj ks :sym->val k) (eval-expr expr))
-                 (recur outer (conj ks :outer))))))))
+  (loop [inner (first *state*)
+         outers (rest *state*)]
+    (if inner
+      (let [scope @inner]
+        (if (contains? scope k)
+          (swap! inner assoc k (eval-expr expr))
+          (recur (first outers) (rest outers))))
+      (throw (ex-info (str "attempt to assign to undeclared variable '" k "'")
+                      {:runtime-error true})))))
 
 (defn- variable->value
   [k]
-  (loop [{:keys [sym->val outer]} @*state*]
-    (if (nil? sym->val)
+  (loop [inner (first *state*)
+         outers (rest *state*)]
+    (if inner
+      (let [scope @inner]
+        (if (contains? scope k)
+          (get scope k)
+          (recur (first outers) (rest outers))))
       (throw (ex-info (str "reference to undeclared variable '" k "'")
-                      {:runtime-error true}))
-      (if (contains? sym->val k)
-        (get sym->val k)
-        (recur outer)))))
+                      {:runtime-error true})))))
 
 (defmulti eval-expr class)
 
@@ -147,7 +144,7 @@
 
 (defmethod eval-stmt Block
   [{:keys [declarations]}]
-  (binding [*state* (atom (map->Scope {:sym->val {}, :outer @*state*}))]
+  (binding [*state* (cons (atom {}) *state*)]
     (run! eval-stmt declarations)))
 
 (defmethod eval-stmt VarStatement
@@ -162,5 +159,5 @@
 
   Each AST is a lox.statement (PrintStatement, ExpressionStatement, etc.)"
   [statements]
-  (binding [*state* (atom (map->Scope {:outer nil, :sym->val {}}))]
+  (binding [*state* (cons (atom {}) *state*)]
     (run! eval-stmt statements)))
