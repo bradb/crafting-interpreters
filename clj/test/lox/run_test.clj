@@ -136,7 +136,7 @@ print a;
 ")))))
 
 (deftest redeclared-var-val-reset-after-exiting-block-test
-  (is (= "2\n5\n5\n" (with-out-str (lr/run "
+  (is (= "2.0\n5.0\n2.0\n" (with-out-str (lr/run "
 var a = 2;
 {
   print a;
@@ -158,7 +158,7 @@ var a = 2;
 print a;
 print b;
 ")))
-    (is (= *out* "2\nhello\n2\n"))))
+    (is (= (str *out*) "2.0\nhello\n2.0\n"))))
 
 (deftest run-print-statement-test
   (are [x y] (is (= x (with-out-str (lr/run y))))
@@ -177,7 +177,7 @@ print b;
   (is (thrown-with-msg? clojure.lang.ExceptionInfo #"must be numbers" (lr/run "print 1 * false;"))))
 
 (deftest run-parser-error-test
-  (is (thrown-with-msg? clojure.lang.ExceptionInfo #"error parsing input" (lr/run "print (42;"))))
+  (is (thrown-with-msg? clojure.lang.ExceptionInfo #"missing expected closing '\)'" (lr/run "print (42;"))))
 
 (deftest run-lexer-error-test
   (is (thrown-with-msg? clojure.lang.ExceptionInfo #"error parsing input" (lr/run "print \"foo;"))))
