@@ -50,7 +50,7 @@
            nil)])))
 
 (deftest parse-if-missing-then-statement-test
-  (is (thrown-with-msg? Exception #"missing statement for if" (parse "if (7 != 7) ; else print \"goodbye\";"))))
+  (is (thrown-with-msg? Exception #"missing expression for statement" (parse "if (7 != 7) ; else print \"goodbye\";"))))
 
 (deftest parse-var-decl-statement-test
   (is (= (parse "var x;") [(VarStatement. (ident->token "x")

@@ -2,7 +2,7 @@
   (:require [lox.scanner :as s])
   (:import [lox.statement AssignmentExpression PrintStatement ExpressionStatement
             VarStatement UnaryExpression GroupingExpression BinaryExpression
-            Block VariableExpression LiteralExpression]))
+            Block VariableExpression LiteralExpression IfStatement]))
 
 (def ^:private ^:dynamic *state* nil)
 
@@ -133,19 +133,27 @@
 
 (defmulti eval-stmt class)
 
-(defmethod eval-stmt PrintStatement
-  [{:keys [expr]}]
-  (println (eval-expr expr)))
+(defmethod eval-stmt Block
+  [{:keys [declarations]}]
+  (binding [*state* (cons (atom {}) *state*)]
+    (run! eval-stmt declarations)))
 
 (defmethod eval-stmt ExpressionStatement
   [{:keys [expr]}]
   (eval-expr expr)
   nil)
 
-(defmethod eval-stmt Block
-  [{:keys [declarations]}]
-  (binding [*state* (cons (atom {}) *state*)]
-    (run! eval-stmt declarations)))
+(defmethod eval-stmt IfStatement
+  [{:keys [expr then-stmt else-stmt]}]
+  (let [r (eval-expr expr)]
+    (if (or (= r nil) (= r false))
+      (when else-stmt
+        (eval-stmt else-stmt))
+      (eval-stmt then-stmt))))
+
+(defmethod eval-stmt PrintStatement
+  [{:keys [expr]}]
+  (println (eval-expr expr)))
 
 (defmethod eval-stmt VarStatement
   [{:keys [identifier expr]}]

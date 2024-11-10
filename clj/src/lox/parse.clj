@@ -1,4 +1,7 @@
-;; TODO: refactor :)
+;; TODO: refactor:
+;; - use consume for semicolons
+;; - fix kw namespacing in scanner/parser
+;; - reduce nested conditionals
 
 (ns lox.parse
   "Parser for the Lox programming language."
@@ -218,6 +221,9 @@
           (recur (declaration tks) (conj decls stmt))))
 
       (let [{expr :expr, tks :tokens} (expression tokens)]
+        (when-not (seq expr)
+          (throw (ex-info "missing expression for statement"
+                          {:parse-error true, :tokens (drop-current-statement tks)})))
         (if (= ::s/semicolon (:type (first tks)))
           {:statement (ExpressionStatement. expr), :tokens (rest tks)}
           (throw (ex-info "missing semicolon after expression"
