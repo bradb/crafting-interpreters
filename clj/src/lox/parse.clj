@@ -6,7 +6,7 @@
   (:import [lox.statement Block VarStatement AssignmentExpression
             VariableExpression PrintStatement ExpressionStatement
             BinaryExpression UnaryExpression LiteralExpression
-            GroupingExpression]))
+            GroupingExpression IfStatement]))
 
 (def literal? #{::s/number
                 ::s/true
@@ -22,6 +22,12 @@
     (if (= (:type (first ts)) ::s/semicolon)
       (rest ts)
       ts)))
+
+(defn- consume!
+  [tokens expected-type msg]
+  (if (= expected-type (:type (first tokens)))
+    (rest tokens)
+    (throw (ex-info msg {:parse-error true, :tokens (drop-current-statement tokens)}))))
 
 (defn- primary
   [tokens]
@@ -155,7 +161,27 @@
   [tokens]
   (assignment tokens))
 
-(declare declaration) ;; because why not
+(declare declaration statement) ;; because why not
+
+(defn- parse-if-stmt
+  [tokens]
+  {:pre [(= ::s/if (:type (first tokens)))]}
+  (let [tokens (consume! (rest tokens) ::s/left-paren "expected '(' for if condition")
+        {if-expr :expr, rest-tks :tokens} (expression tokens)]
+    (if (seq if-expr)
+      (let [rest-tks (consume! rest-tks ::s/right-paren "expected ')' after if condition")
+            {then-stmt :statement, rest-tks :tokens} (statement rest-tks)]
+        (if (seq then-stmt)
+          (if (= ::s/else (:type (first rest-tks)))
+            (let [{else-stmt :statement, rest-tks :tokens} (statement (rest rest-tks))]
+              (if (seq else-stmt)
+                {:statement (IfStatement. if-expr then-stmt else-stmt), :tokens rest-tks}
+                (throw (ex-info "missing else statement", {:parse-error true, :tokens (drop-current-statement rest-tks)}))))
+            {:statement (IfStatement. if-expr then-stmt nil), :tokens rest-tks})
+          (throw (ex-info "missing then statement for if statement"
+                          {:parse-error true, :tokens (drop-current-statement rest-tks)}))))
+      (throw (ex-info "expected condition for if statement, got " (:type (first (rest tokens)))
+                      {:parse-error true, :tokens (drop-current-statement tokens)})) )))
 
 (defn- statement
   [tokens]
@@ -171,6 +197,9 @@
                             {:parse-error true, :tokens (drop-current-statement rest-tokens)})))
           (throw (ex-info "missing expression for print statement"
                           {:parse-error true, :tokens (drop-current-statement rest-tokens)}))))
+
+      ::s/if
+      (parse-if-stmt tokens)
 
       ::s/left-brace
       (loop [{stmt :statement, tks :tokens} (declaration (rest tokens))
