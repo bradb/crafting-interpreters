@@ -170,6 +170,19 @@ print b;
     "foobar\n" "print \"foo\" + \"bar\";"
     "hi\nthere\n" "print \"hi\"; print \"there\";"))
 
+(deftest if-statement-no-else-test
+  (is (= "this is true" (with-out-str (lr/run "if (1 > 0) print \"this is true\";"))))
+  (is (= "" (with-out-str (lr/run "if (10 == 100) print \"this is true\"")))))
+
+(deftest if-statement-true-test
+  (is (= "hello" (with-out-str (lr/run "if (7 == 7) print \"hello\"; else print \"goodbye\";")))))
+
+(deftest if-statement-false-test
+  (is (= "goodbye" (with-out-str (lr/run "if (7 != 7) print \"hello\"; else print \"goodbye\";")))))
+
+(deftest if-statement-missing-then-statement-test
+  (is (thrown-with-msg? Exception #"missing statement for if" (lr/run "if (7 != 7) ; else print \"goodbye\";"))))
+
 (deftest run-expressions-statement-test
   (is (= "" (with-out-str (lr/run "1;")))))
 

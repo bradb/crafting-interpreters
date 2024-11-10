@@ -5,7 +5,7 @@
   (:import [lox.statement AssignmentExpression Block PrintStatement
             ExpressionStatement VarStatement GroupingExpression
             BinaryExpression VariableExpression UnaryExpression
-            LiteralExpression]))
+            LiteralExpression IfStatement]))
 
 (defn- parse
   [s]
@@ -32,6 +32,25 @@
 (defn ident->token
   [s]
   (s/->Token ::s/identifier s nil 1))
+
+(deftest parse-if-statement-test
+  (is (= (parse "if (7 == 7) print \"hello\"; else print \"goodbye\";")
+         (IfStatement.
+          (BinaryExpression. (s/token ::s/equal-equal "==" nil 1) (LiteralExpression. 7.0) (LiteralExpression. 7.0))
+          (PrintStatement. (LiteralExpression. "hello"))
+          (PrintStatement. (LiteralExpression. "goodbye"))))))
+
+(deftest parse-if-statement-no-else-test
+  (is (= (parse "if (7 == 7) print \"hello\";")
+         (IfStatement.
+          (BinaryExpression. (s/token ::s/equal-equal "==" nil 1)
+                             (LiteralExpression. 7)
+                             (LiteralExpression. 7))
+          (PrintStatement. (LiteralExpression. "hello"))
+          nil))))
+
+(deftest parse-if-missing-then-statement-test
+  (is (thrown-with-msg? Exception #"missing statement for if" (parse "if (7 != 7) ; else print \"goodbye\";"))))
 
 (deftest parse-var-decl-statement-test
   (is (= (parse "var x;") [(VarStatement. (ident->token "x")

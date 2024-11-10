@@ -1,8 +1,9 @@
 (ns lox.statement)
 
 (defrecord Block [declarations])
-(defrecord PrintStatement [expr])
 (defrecord ExpressionStatement [expr])
+(defrecord IfStatement [expr then-stmt else-stmt])
+(defrecord PrintStatement [expr])
 (defrecord VarStatement [identifier expr])
 
 (defrecord AssignmentExpression [identifier expr])
