@@ -2,7 +2,8 @@
   (:require [lox.scanner :as s])
   (:import [lox.statement AssignmentExpression PrintStatement ExpressionStatement
             VarStatement UnaryExpression GroupingExpression BinaryExpression
-            Block VariableExpression LiteralExpression IfStatement]))
+            Block VariableExpression LiteralExpression IfStatement
+            LogicalExpression]))
 
 (def ^:private ^:dynamic *state* nil)
 
@@ -121,6 +122,21 @@
 (defmethod eval-expr LiteralExpression
   [{:keys [val] :as _expr}]
   val)
+
+(defmethod eval-expr LogicalExpression
+  [{:keys [oper left right ] :as _expr}]
+  (case (:type oper)
+    ::s/or
+    (let [left-v (eval-expr left)]
+      (if (or (nil? left-v) (false? left-v))
+        (eval-expr right)
+        left-v))
+
+    ::s/and
+    (let [left-v (eval-expr left)]
+      (if (or (nil? left-v) (false? left-v))
+        left-v
+        (eval-expr right)))))
 
 (defmethod eval-expr VariableExpression
   [expr]

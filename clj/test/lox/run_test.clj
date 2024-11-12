@@ -186,6 +186,18 @@ print b;
 (deftest run-expressions-statement-test
   (is (= "" (with-out-str (lr/run "1;")))))
 
+(deftest print-or-expression-test
+  (is (= "10.0\n" (with-out-str (lr/run "print false or 10;"))))
+  (is (= "42.0\n" (with-out-str (lr/run "print 42 or \"hello\";")))))
+
+(deftest print-and-expression-test
+  (is (= "false\n" (with-out-str (lr/run "print false and 10;"))))
+  (is (= "10.0\n" (with-out-str (lr/run "print true and 10;")))))
+
+(deftest print-and-or-expression-test
+  (is (= "false\n" (with-out-str (lr/run "print nil or false and 10;"))))
+  (is (= "10.0\n" (with-out-str (lr/run "print 42 and false or 10;")))))
+
 (deftest runtime-errors-test
   (is (thrown-with-msg? clojure.lang.ExceptionInfo #"must be numbers" (lr/run "print 1 * false;"))))
 
