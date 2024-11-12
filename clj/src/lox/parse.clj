@@ -9,7 +9,7 @@
   (:import [lox.statement Block VarStatement AssignmentExpression
             VariableExpression PrintStatement ExpressionStatement
             BinaryExpression UnaryExpression LiteralExpression
-            GroupingExpression IfStatement]))
+            GroupingExpression IfStatement LogicalExpression]))
 
 (def literal? #{::s/number
                 ::s/true
@@ -147,18 +147,68 @@
            {:expr expr, :tokens ts}))
        {:expr nil, :tokens tokens}))))
 
+(defn- logic-and
+  ([tokens]
+   (logic-and tokens []))
+  ([tokens eqlty-exprs]
+   (if-let [eq-expr (equality tokens)]
+     (let [tks (:tokens eq-expr)]
+       (if (= ::s/and (:type (first tks)))
+         (recur (rest tks) (conj eqlty-exprs (:expr eq-expr)))
+         (let [expr (reduce (fn [acc x]
+                              (LogicalExpression. (s/token ::s/and "and" nil 1) x acc))
+                            (:expr eq-expr)
+                            eqlty-exprs)]
+           {:expr expr, :tokens tks})))
+     (when (seq eqlty-exprs)
+         (let [expr (reduce (fn [acc x]
+                              (LogicalExpression. (s/token ::s/and "and" nil 1) x acc))
+                            eqlty-exprs)]
+           {:expr expr, :tokens tokens})))))
+
+
+(defn- logic-or
+  ([tokens]
+   (logic-or tokens []))
+  ([tokens and-exprs]
+   (if-let [and-expr (logic-and tokens)]
+     (let [tks (:tokens and-expr)]
+       (if (= ::s/or (:type (first tks)))
+         (recur (rest tks) (conj and-exprs (:expr and-expr)))
+         (let [expr (reduce (fn [acc x]
+                              (LogicalExpression. (s/token ::s/or "or" nil 1) x acc))
+                            (:expr and-expr)
+                            and-exprs)]
+           {:expr expr, :tokens tks})))
+     (when (seq and-exprs)
+       (let [expr (reduce
+                   (fn [acc x]
+                     (LogicalExpression. (s/token ::s/or "or" nil 1) x acc))
+                   and-exprs)]
+         {:expr expr, :tokens tokens})))))
+
 (defn- assignment
   ([tokens]
    (assignment tokens []))
-  ([tokens rights]
-   (if (= [::s/identifier ::s/equal] (->> tokens
-                                          (take 2)
-                                          (map :type)))
-     (recur (drop 2 tokens) (conj rights (first tokens)))
-     (let [{expr :expr, tks :tokens} (equality tokens)
-           assign-expr (reduce (fn assigns [acc x]
-                                 (AssignmentExpression. x acc)) expr (rseq rights))]
-       {:expr assign-expr, :tokens tks}))))
+  ([tokens assign-exprs]
+   (cond
+     (= [::s/identifier ::s/equal] (->> tokens (take 2) (map :type)))
+     (recur (drop 2 tokens) (conj assign-exprs (first tokens)))
+
+     (seq (logic-or tokens))
+     (let [or-expr (logic-or tokens)
+           assign-expr (reduce (fn [acc x]
+                                 (AssignmentExpression. x acc))
+                               (:expr or-expr)
+                               (rseq assign-exprs))]
+       {:expr assign-expr, :tokens (:tokens or-expr)})
+
+     :else
+     (when (seq assign-exprs)
+         (let [expr (reduce (fn [acc x]
+                              (AssignmentExpression. x acc))
+                            (rseq assign-exprs))]
+           {:expr expr, :tokens tokens})))))
 
 (defn- expression
   [tokens]

@@ -9,6 +9,7 @@
 (defrecord AssignmentExpression [identifier expr])
 (defrecord BinaryExpression [oper left right])
 (defrecord GroupingExpression [expr])
-(defrecord UnaryExpression [oper right])
 (defrecord LiteralExpression [val])
+(defrecord LogicalExpression [oper left right])
+(defrecord UnaryExpression [oper right])
 (defrecord VariableExpression [identifier])

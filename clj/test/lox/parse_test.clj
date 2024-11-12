@@ -5,7 +5,7 @@
   (:import [lox.statement AssignmentExpression Block PrintStatement
             ExpressionStatement VarStatement GroupingExpression
             BinaryExpression VariableExpression UnaryExpression
-            LiteralExpression IfStatement]))
+            LiteralExpression IfStatement LogicalExpression]))
 
 (defn- parse
   [s]
@@ -72,6 +72,27 @@
                                                       (ident->token "x")
                                                       (AssignmentExpression. (ident->token "y")
                                                                              (LiteralExpression. 1.0))))])))
+
+(deftest parse-and-expr-test
+  (is (= (parse "1 or 10;")
+         [(ExpressionStatement.
+           (LogicalExpression. (s/token ::s/or "or" nil 1)
+                               (LiteralExpression. 1.0)
+                               (LiteralExpression. 10.0)))])))
+
+(deftest parse-or-expr-test
+  (is (= (parse "\"foo\" and \"bar\";")
+         [(ExpressionStatement. (LogicalExpression. (s/token ::s/and "and" nil 1)
+                                                    (LiteralExpression. "foo")
+                                                    (LiteralExpression. "bar")))])))
+
+(deftest parse-and-or-expr-test
+  (is (= (parse "1 or \"foo\" and \"bar\";")
+         [(ExpressionStatement. (LogicalExpression. (s/token ::s/or "or" nil 1)
+                                                    (LiteralExpression. 1.0)
+                                                    (LogicalExpression. (s/token ::s/and "and" nil 1)
+                                                                        (LiteralExpression. "foo")
+                                                                        (LiteralExpression. "bar"))))])))
 
 (deftest parse-block-simple-test
   (is (= (parse "{ print a; }")
