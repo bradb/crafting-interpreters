@@ -5,7 +5,8 @@
   (:import [lox.statement AssignmentExpression Block PrintStatement
             ExpressionStatement VarStatement GroupingExpression
             BinaryExpression VariableExpression UnaryExpression
-            LiteralExpression IfStatement LogicalExpression]))
+            LiteralExpression IfStatement LogicalExpression
+            WhileStatement]))
 
 (defn- parse
   [s]
@@ -51,6 +52,39 @@
 
 (deftest parse-if-missing-then-statement-test
   (is (thrown-with-msg? Exception #"missing expression for statement" (parse "if (7 != 7) ; else print \"goodbye\";"))))
+
+
+(deftest parse-single-line-while-test
+  (is (= (parse "
+  var i = 0;
+  while (i <= 10) i = i + 1;
+  print i;")
+         [(VarStatement. (ident->token "i")
+                         (LiteralExpression. 0.0))
+          (WhileStatement. (BinaryExpression. (s/token ::s/less-equal "<=" nil 1)
+                                              (VariableExpression. (ident->token "i"))
+                                              (LiteralExpression. 10.0))
+                           (AssignmentExpression. (ident->token "i")
+                                                  (BinaryExpression. (s/token ::s/equal "=" nil 1)
+                                                                     (VariableExpression. (ident->token "i"))
+                                                                     (LiteralExpression. 1.0))))
+          (PrintStatement. (VariableExpression. (ident->token "i")))])))
+
+(deftest multi-line-while-test
+  (is (= (parse "
+var i = 1;
+while (i < 4) {
+print i;
+i = i + 1;
+}")))
+
+  (is (= "after loop\n" (with-out-str (lr/run "
+var i = 5;
+while (i < 4) {
+print i;
+i = i + 1;
+}
+print \"after loop\";")))))
 
 (deftest parse-var-decl-statement-test
   (is (= (parse "var x;") [(VarStatement. (ident->token "x")

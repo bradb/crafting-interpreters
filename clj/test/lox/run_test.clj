@@ -183,6 +183,28 @@ print b;
 (deftest if-statement-missing-then-statement-test
   (is (thrown-with-msg? Exception #"missing expression for statement" (lr/run "if (7 != 7) ; else print \"goodbye\";"))))
 
+(deftest single-line-while-test
+  (is (= "11.0\n" (with-out-str (lr/run "
+var i = 0;
+while (i <= 10) i = i + 1;
+print i;")))))
+
+(deftest multi-line-while-test
+  (is (= "1.0\n2.0\n3.0\n" (with-out-str (lr/run "
+var i = 1;
+while (i < 4) {
+print i;
+i = i + 1;
+}"))))
+
+  (is (= "after loop\n" (with-out-str (lr/run "
+var i = 5;
+while (i < 4) {
+print i;
+i = i + 1;
+}
+print \"after loop\";")))))
+
 (deftest run-expressions-statement-test
   (is (= "" (with-out-str (lr/run "1;")))))
 

@@ -5,6 +5,7 @@
 (defrecord IfStatement [expr then-stmt else-stmt])
 (defrecord PrintStatement [expr])
 (defrecord VarStatement [identifier expr])
+(defrecord WhileStatement [expr stmt])
 
 (defrecord AssignmentExpression [identifier expr])
 (defrecord BinaryExpression [oper left right])
