@@ -237,17 +237,49 @@
       (throw (ex-info "expected condition for if statement, got " (:type (first (rest tokens)))
                       {:parse-error true, :tokens (drop-current-statement tokens)})) )))
 
-(defn- parse-while-statement
+(defn- parse-while-stmt
   [tokens]
   (let [tokens (-> tokens
                    (consume! ::s/while "expected while statement")
-                   (consume! ::s/left-paren "expected '(' before while expression" ))]
+                   (consume! ::s/left-paren "expected '(' after while" ))]
     (if-let [expr (expression tokens)]
       (let [tokens (consume! (:tokens expr) ::s/right-paren "missing closing ')' after while expression")]
         (if-let [stmt (statement tokens)]
           {:statement (WhileStatement. (:expr expr) (:statement stmt)), :tokens (:tokens stmt)}
           (throw (ex-info "missing statement for while statement" {:parse-error true, :tokens (drop-current-statement tokens)}))   ))
       (throw (ex-info "missing expression for while statement" {:parse-error true, :tokens (drop-current-statement tokens)})))))
+
+(defn- parse-for-stmt
+  [tokens]
+  (let [expr-stmt (fn [tks]
+                    (when-let [expr (expression tks)]
+                      (let [tokens (consume! (:tokens expr) ::s/semicolon "expected ';' after for initialiser")]
+                        {:statement expr, :tokens tokens})))
+        tokens (-> tokens
+                   (consume! ::s/for "expected for statement")
+                   (consume! ::s/left-paren "expected '(' after for"))
+        {init :statement, tks :tokens} (or (declaration tokens) (expr-stmt tokens))
+        {cond-expr :expr, tks :tokens} (expression tks)
+        tokens (consume! (or tks tokens) ::s/semicolon "expected ';' after for conditional")
+        {inc-expr :expr, tks :tokens} (expression tokens)
+        tokens (consume! (or tks tokens) ::s/right-paren "expected ')' after for increment")
+        {stmt :statement, tks :tokens} (statement tokens)]
+    (when (not (seq stmt))
+      (throw (ex-info "missing statement body for while" {:parse-error true})))
+    (let [statements (if (seq init)
+                       [init]
+                       [])
+          while-cond (if (seq cond-expr)
+                       cond-expr
+                       (LiteralExpression. true))
+          while-stmt (if (seq inc-expr)
+                       (let [inc-expr-stmt (ExpressionStatement. inc-expr)]
+                         (WhileStatement. while-cond (if (= Block (class stmt))
+                                                       (update stmt :declarations conj inc-expr-stmt)
+                                                       (Block. [stmt inc-expr-stmt]))))
+                       (WhileStatement. while-cond stmt))
+          statements (conj statements while-stmt)]
+      {:statement (Block. statements), :tokens tks})))
 
 (defn- statement
   [tokens]
@@ -268,7 +300,10 @@
       (parse-if-stmt tokens)
 
       ::s/while
-      (parse-while-statement tokens)
+      (parse-while-stmt tokens)
+
+      ::s/for
+      (parse-for-stmt tokens)
 
       ::s/left-brace
       (loop [{stmt :statement, tks :tokens} (declaration (rest tokens))

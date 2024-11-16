@@ -91,6 +91,10 @@ i = i + 1;
                                                                         (VariableExpression. (ident->token "i" 4))
                                                                         (LiteralExpression. 1.0))))]))])))
 
+(deftest for-syntax-sugar-test
+  (is (= (parse "{ var i = 0; while (i < 10) { print i; i = i + 1; }}")
+         (parse "for (var i = 0; i < 10; i = i + 1) { print i; }"))))
+
 (deftest parse-var-decl-statement-test
   (is (= (parse "var x;") [(VarStatement. (ident->token "x")
                                           (LiteralExpression. nil))]))

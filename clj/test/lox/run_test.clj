@@ -205,6 +205,10 @@ i = i + 1;
 }
 print \"after loop\";")))))
 
+(deftest for-loop-test
+  (is (= "2.0\n4.0\n6.0\n"
+         (with-out-str (lr/run "for (var i = 0; i < 4; i = i + 1) { print i; }")))))
+
 (deftest run-expressions-statement-test
   (is (= "" (with-out-str (lr/run "1;")))))
 
