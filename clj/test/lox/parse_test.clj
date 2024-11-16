@@ -31,8 +31,10 @@
                                                                    (LiteralExpression. "bar")))]))
 
 (defn ident->token
-  [s]
-  (s/->Token ::s/identifier s nil 1))
+  ([s]
+   (ident->token s 1))
+  ([s line-num]
+   (s/->Token ::s/identifier s nil line-num)))
 
 (deftest parse-if-statement-test
   (is (= (parse "if (7 == 7) print \"hello\"; else print \"goodbye\";")
@@ -55,36 +57,39 @@
 
 
 (deftest parse-single-line-while-test
-  (is (= (parse "
-  var i = 0;
+  (is (= (parse "var i = 0;
   while (i <= 10) i = i + 1;
   print i;")
          [(VarStatement. (ident->token "i")
                          (LiteralExpression. 0.0))
-          (WhileStatement. (BinaryExpression. (s/token ::s/less-equal "<=" nil 1)
-                                              (VariableExpression. (ident->token "i"))
+          (WhileStatement. (BinaryExpression. (s/token ::s/less-equal "<=" nil 2)
+                                              (VariableExpression. (ident->token "i" 2))
                                               (LiteralExpression. 10.0))
-                           (AssignmentExpression. (ident->token "i")
-                                                  (BinaryExpression. (s/token ::s/equal "=" nil 1)
-                                                                     (VariableExpression. (ident->token "i"))
-                                                                     (LiteralExpression. 1.0))))
-          (PrintStatement. (VariableExpression. (ident->token "i")))])))
+                           (ExpressionStatement.
+                            (AssignmentExpression. (ident->token "i" 2)
+                                                   (BinaryExpression. (s/token ::s/plus "+" nil 2)
+                                                                      (VariableExpression. (ident->token "i" 2))
+                                                                      (LiteralExpression. 1.0)))))
+          (PrintStatement. (VariableExpression. (ident->token "i" 3)))])))
 
 (deftest multi-line-while-test
-  (is (= (parse "
-var i = 1;
+  (is (= (parse "var i = 1;
 while (i < 4) {
 print i;
 i = i + 1;
-}")))
-
-  (is (= "after loop\n" (with-out-str (lr/run "
-var i = 5;
-while (i < 4) {
-print i;
-i = i + 1;
-}
-print \"after loop\";")))))
+}")
+         [(VarStatement. (ident->token "i")
+                         (LiteralExpression. 1.0))
+          (WhileStatement. (BinaryExpression. (s/token ::s/less "<" nil 2)
+                                              (VariableExpression. (ident->token "i" 2))
+                                              (LiteralExpression. 4.0))
+                           (Block.
+                            [(PrintStatement. (VariableExpression. (ident->token "i" 3)))
+                             (ExpressionStatement.
+                              (AssignmentExpression. (ident->token "i" 4)
+                                                     (BinaryExpression. (s/token ::s/plus "+" nil 4)
+                                                                        (VariableExpression. (ident->token "i" 4))
+                                                                        (LiteralExpression. 1.0))))]))])))
 
 (deftest parse-var-decl-statement-test
   (is (= (parse "var x;") [(VarStatement. (ident->token "x")

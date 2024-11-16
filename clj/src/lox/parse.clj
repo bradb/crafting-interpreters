@@ -9,7 +9,8 @@
   (:import [lox.statement Block VarStatement AssignmentExpression
             VariableExpression PrintStatement ExpressionStatement
             BinaryExpression UnaryExpression LiteralExpression
-            GroupingExpression IfStatement LogicalExpression]))
+            GroupingExpression IfStatement LogicalExpression
+            WhileStatement]))
 
 (def literal? #{::s/number
                 ::s/true
@@ -236,6 +237,18 @@
       (throw (ex-info "expected condition for if statement, got " (:type (first (rest tokens)))
                       {:parse-error true, :tokens (drop-current-statement tokens)})) )))
 
+(defn- parse-while-statement
+  [tokens]
+  (let [tokens (-> tokens
+                   (consume! ::s/while "expected while statement")
+                   (consume! ::s/left-paren "expected '(' before while expression" ))]
+    (if-let [expr (expression tokens)]
+      (let [tokens (consume! (:tokens expr) ::s/right-paren "missing closing ')' after while expression")]
+        (if-let [stmt (statement tokens)]
+          {:statement (WhileStatement. (:expr expr) (:statement stmt)), :tokens (:tokens stmt)}
+          (throw (ex-info "missing statement for while statement" {:parse-error true, :tokens (drop-current-statement tokens)}))   ))
+      (throw (ex-info "missing expression for while statement" {:parse-error true, :tokens (drop-current-statement tokens)})))))
+
 (defn- statement
   [tokens]
   (when (seq tokens)
@@ -253,6 +266,9 @@
 
       ::s/if
       (parse-if-stmt tokens)
+
+      ::s/while
+      (parse-while-statement tokens)
 
       ::s/left-brace
       (loop [{stmt :statement, tks :tokens} (declaration (rest tokens))
