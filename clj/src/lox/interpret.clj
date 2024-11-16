@@ -3,11 +3,15 @@
   (:import [lox.statement AssignmentExpression PrintStatement ExpressionStatement
             VarStatement UnaryExpression GroupingExpression BinaryExpression
             Block VariableExpression LiteralExpression IfStatement
-            LogicalExpression]))
+            LogicalExpression WhileStatement]))
 
 (def ^:private ^:dynamic *state* nil)
 
 (declare eval-expr)
+
+(defn- truthy?
+  [v]
+  (not (or (nil? v) (false? v))))
 
 (defn- declare-variable!
   [k expr]
@@ -166,6 +170,13 @@
       (when else-stmt
         (eval-stmt else-stmt))
       (eval-stmt then-stmt))))
+
+(defmethod eval-stmt WhileStatement
+  [{:keys [expr stmt]}]
+  (loop [r (eval-expr expr)]
+    (when (truthy? r)
+      (eval-stmt stmt)
+      (recur (eval-expr expr)))))
 
 (defmethod eval-stmt PrintStatement
   [{:keys [expr]}]
