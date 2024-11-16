@@ -50,7 +50,7 @@
     "true" "(10 < 12) == (88 < 100)"))
 
 (deftest var-decl-test
-  (are [x y z] (= z (with-out-str (lr/run (str x "\n" y))))
+  (are [x y z] (= z (run->str (str x "\n" y)))
     "var n;" "print n;" "nil\n"
     "var x = 6;" "print x;" "6.0\n"
     "var y = (5 + 3) / 2;" "print y;" "4.0\n"
@@ -58,28 +58,28 @@
 
 (deftest redefine-a-var-test
   (is (= "4.0\n10.0\n"
-         (with-out-str (lr/run "
+         (run->str "
 var x = 2 + 3 - 1;
 print x;
 var x = 16 * 10 / 16;
-print x;")))))
+print x;"))))
 
 (deftest assignment-test
   (is (= "27.0\nhello, clojure\n"
-         (with-out-str (lr/run "
+         (run->str "
 var x = 27;
 print x;
 x = \"hello, clojure\";
-print x;")))))
+print x;"))))
 
 (deftest multiple-assign-test
   (is (= "foobar\nfoobar\n"
-         (with-out-str (lr/run "
+         (run->str "
 var x;
 var y;
 x = y = \"foobar\";
 print x;
-print y;")))))
+print y;"))))
 
 (deftest assignment-to-undefined-variable
   (is (thrown-with-msg?
@@ -102,7 +102,7 @@ global a
 global b
 global c
 "
-       (with-out-str (lr/run "
+       (run->str "
 var a = \"global a\";
 var b = \"global b\";
 var c = \"global c\";
@@ -122,10 +122,10 @@ var c = \"global c\";
 print a;
 print b;
 print c;
-")))))
+"))))
 
 (deftest assigned-val-sticks-after-exiting-block-test
-  (is (= "2.0\n5.0\n5.0\n" (with-out-str (lr/run "
+  (is (= "2.0\n5.0\n5.0\n" (run->str "
 var a = 2;
 {
   print a;
@@ -133,10 +133,10 @@ var a = 2;
   print a;
 }
 print a;
-")))))
+"))))
 
 (deftest redeclared-var-val-reset-after-exiting-block-test
-  (is (= "2.0\n5.0\n2.0\n" (with-out-str (lr/run "
+  (is (= "2.0\n5.0\n2.0\n" (run->str "
 var a = 2;
 {
   print a;
@@ -144,7 +144,7 @@ var a = 2;
   print a;
 }
 print a;
-")))))
+"))))
 
 (deftest var-decl-disappears-after-exiting-block-test
   (binding [*out* (new java.io.StringWriter)]
@@ -161,7 +161,7 @@ print b;
     (is (= (str *out*) "2.0\nhello\n2.0\n"))))
 
 (deftest run-print-statement-test
-  (are [x y] (is (= x (with-out-str (lr/run y))))
+  (are [x y] (is (= x (run->str y)))
     "1.0\n" "print 1;"
     "36.0\n" "print 6*6;"
     "hello, world!\n" "print \"hello, world!\";"
@@ -171,39 +171,39 @@ print b;
     "hi\nthere\n" "print \"hi\"; print \"there\";"))
 
 (deftest if-statement-no-else-test
-  (is (= "this is true\n" (with-out-str (lr/run "if (1 > 0) print \"this is true\";"))))
-  (is (= "" (with-out-str (lr/run "if (10 == 100) print \"this is true\";")))))
+  (is (= "this is true\n" (run->str "if (1 > 0) print \"this is true\";")))
+  (is (= "" (run->str "if (10 == 100) print \"this is true\";"))))
 
 (deftest if-statement-true-test
-  (is (= "hello\n" (with-out-str (lr/run "if (7 == 7) print \"hello\"; else print \"goodbye\";")))))
+  (is (= "hello\n" (run->str "if (7 == 7) print \"hello\"; else print \"goodbye\";"))))
 
 (deftest if-statement-false-test
-  (is (= "goodbye\n" (with-out-str (lr/run "if (7 != 7) print \"hello\"; else print \"goodbye\";")))))
+  (is (= "goodbye\n" (run->str "if (7 != 7) print \"hello\"; else print \"goodbye\";"))))
 
 (deftest if-statement-missing-then-statement-test
   (is (thrown-with-msg? Exception #"missing expression for statement" (lr/run "if (7 != 7) ; else print \"goodbye\";"))))
 
 (deftest single-line-while-test
-  (is (= "11.0\n" (with-out-str (lr/run "
+  (is (= "11.0\n" (run->str "
 var i = 0;
 while (i <= 10) i = i + 1;
-print i;")))))
+print i;"))))
 
 (deftest multi-line-while-test
-  (is (= "1.0\n2.0\n3.0\n" (with-out-str (lr/run "
+  (is (= "1.0\n2.0\n3.0\n" (run->str "
 var i = 1;
 while (i < 4) {
 print i;
 i = i + 1;
 }"))))
 
-  (is (= "after loop\n" (with-out-str (lr/run "
+  (is (= "after loop\n" (run->str "
 var i = 5;
 while (i < 4) {
 print i;
 i = i + 1;
 }
-print \"after loop\";")))))
+print \"after loop\";")))
 
 (deftest for-loop-test
   (is (= "0.0\n1.0\n2.0\n3.0\n"
@@ -217,28 +217,28 @@ print \"after loop\";")))))
     (is (= for-out while-out))))
 
 (deftest run-expressions-statement-test
-  (is (= "" (with-out-str (lr/run "1;")))))
+  (is (= "" (run->str "1;"))))
 
 (deftest print-or-expression-test
-  (is (= "10.0\n" (with-out-str (lr/run "print false or 10;"))))
-  (is (= "42.0\n" (with-out-str (lr/run "print 42 or \"hello\";")))))
+  (is (= "10.0\n" (run->str "print false or 10;"))))
+  (is (= "42.0\n" (run->str "print 42 or \"hello\";")))
 
 (deftest print-and-expression-test
-  (is (= "false\n" (with-out-str (lr/run "print false and 10;"))))
-  (is (= "10.0\n" (with-out-str (lr/run "print true and 10;")))))
+  (is (= "false\n" (run->str "print false and 10;"))))
+  (is (= "10.0\n" (run->str "print true and 10;")))
 
 (deftest print-and-or-expression-test
-  (is (= "false\n" (with-out-str (lr/run "print nil or false and 10;"))))
-  (is (= "10.0\n" (with-out-str (lr/run "print 42 and false or 10;")))))
+  (is (= "false\n" (run->str "print nil or false and 10;"))))
+  (is (= "10.0\n" (run->str "print 42 and false or 10;")))
 
 (deftest runtime-errors-test
-  (is (thrown-with-msg? clojure.lang.ExceptionInfo #"must be numbers" (lr/run "print 1 * false;"))))
+  (is (thrown-with-msg? clojure.lang.ExceptionInfo #"must be numbers" (run->str "print 1 * false;"))))
 
 (deftest run-parser-error-test
-  (is (thrown-with-msg? clojure.lang.ExceptionInfo #"missing expected closing '\)'" (lr/run "print (42;"))))
+  (is (thrown-with-msg? clojure.lang.ExceptionInfo #"missing expected closing '\)'" (run->str "print (42;"))))
 
 (deftest run-lexer-error-test
-  (is (thrown-with-msg? clojure.lang.ExceptionInfo #"error parsing input" (lr/run "print \"foo;"))))
+  (is (thrown-with-msg? clojure.lang.ExceptionInfo #"error parsing input" (run->str "print \"foo;"))))
 
 (deftest synchronise-after-parse-error-test
   (is false))
