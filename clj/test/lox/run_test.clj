@@ -206,8 +206,15 @@ i = i + 1;
 print \"after loop\";")))))
 
 (deftest for-loop-test
-  (is (= "2.0\n4.0\n6.0\n"
-         (with-out-str (lr/run "for (var i = 0; i < 4; i = i + 1) { print i; }")))))
+  (is (= "0.0\n1.0\n2.0\n3.0\n"
+         (run->str "for (var i = 0; i < 4; i = i + 1) { print i; }"))))
+
+(deftest for-while-parity-test
+  (let [for-out (run->str "for (var i = 0; i < 10; i = i + 1) { print i; }")
+        while-out (run->str "{ var i = 0; while (i < 10) { print i; i = i + 1; }}")]
+    (is (seq for-out))
+    (is (seq while-out))
+    (is (= for-out while-out))))
 
 (deftest run-expressions-statement-test
   (is (= "" (with-out-str (lr/run "1;")))))
