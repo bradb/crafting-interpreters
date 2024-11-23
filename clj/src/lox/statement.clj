@@ -2,6 +2,7 @@
 
 (defrecord Block [declarations])
 (defrecord ExpressionStatement [expr])
+(defrecord FunStatement [name args exprs])
 (defrecord IfStatement [expr then-stmt else-stmt])
 (defrecord PrintStatement [expr])
 (defrecord VarStatement [identifier expr])

@@ -10,7 +10,7 @@
             VariableExpression PrintStatement ExpressionStatement
             BinaryExpression UnaryExpression LiteralExpression
             GroupingExpression IfStatement LogicalExpression
-            WhileStatement]))
+            WhileStatement FunStatement]))
 
 (def literal? #{::s/number
                 ::s/true
@@ -162,11 +162,10 @@
                             eqlty-exprs)]
            {:expr expr, :tokens tks})))
      (when (seq eqlty-exprs)
-         (let [expr (reduce (fn [acc x]
-                              (LogicalExpression. (s/token ::s/and "and" nil 1) x acc))
-                            eqlty-exprs)]
-           {:expr expr, :tokens tokens})))))
-
+       (let [expr (reduce (fn [acc x]
+                            (LogicalExpression. (s/token ::s/and "and" nil 1) x acc))
+                          eqlty-exprs)]
+         {:expr expr, :tokens tokens})))))
 
 (defn- logic-or
   ([tokens]
@@ -206,10 +205,10 @@
 
      :else
      (when (seq assign-exprs)
-         (let [expr (reduce (fn [acc x]
-                              (AssignmentExpression. x acc))
-                            (rseq assign-exprs))]
-           {:expr expr, :tokens tokens})))))
+       (let [expr (reduce (fn [acc x]
+                            (AssignmentExpression. x acc))
+                          (rseq assign-exprs))]
+         {:expr expr, :tokens tokens})))))
 
 (defn- expression
   [tokens]
@@ -235,18 +234,18 @@
           (throw (ex-info "missing then statement for if statement"
                           {:parse-error true, :tokens (drop-current-statement rest-tks)}))))
       (throw (ex-info "expected condition for if statement, got " (:type (first (rest tokens)))
-                      {:parse-error true, :tokens (drop-current-statement tokens)})) )))
+                      {:parse-error true, :tokens (drop-current-statement tokens)})))))
 
 (defn- parse-while-stmt
   [tokens]
   (let [tokens (-> tokens
                    (consume! ::s/while "expected while statement")
-                   (consume! ::s/left-paren "expected '(' after while" ))]
+                   (consume! ::s/left-paren "expected '(' after while"))]
     (if-let [expr (expression tokens)]
       (let [tokens (consume! (:tokens expr) ::s/right-paren "missing closing ')' after while expression")]
         (if-let [stmt (statement tokens)]
           {:statement (WhileStatement. (:expr expr) (:statement stmt)), :tokens (:tokens stmt)}
-          (throw (ex-info "missing statement for while statement" {:parse-error true, :tokens (drop-current-statement tokens)}))   ))
+          (throw (ex-info "missing statement for while statement" {:parse-error true, :tokens (drop-current-statement tokens)}))))
       (throw (ex-info "missing expression for while statement" {:parse-error true, :tokens (drop-current-statement tokens)})))))
 
 (defn- parse-for-stmt
@@ -281,6 +280,24 @@
           statements (conj statements while-stmt)]
       {:statement (Block. statements), :tokens tks})))
 
+(defn- parse-block
+  [tokens]
+  (when-let [tokens (consume! tokens ::s/left-brace "missing opening '{' for block")]
+    (loop [{stmt :statement, tks :tokens} (declaration (rest tokens))
+           decls []]
+      (case [(nil? stmt) (= ::s/right-brace (:type (first tks)))]
+        [true true]
+        {:statement (Block. decls), :tokens (rest tks)}
+
+        [true false]
+        (throw (ex-info "expected closing brace '}'", {:parse-error true}))
+
+        [false true]
+        {:statement (Block. (conj decls stmt)), :tokens (rest tks)}
+
+        [false false]
+        (recur (declaration tks) (conj decls stmt))))))
+
 (defn- statement
   [tokens]
   (when (seq tokens)
@@ -306,20 +323,7 @@
       (parse-for-stmt tokens)
 
       ::s/left-brace
-      (loop [{stmt :statement, tks :tokens} (declaration (rest tokens))
-             decls []]
-        (case [(nil? stmt) (= ::s/right-brace (:type (first tks)))]
-          [true true]
-          {:statement (Block. decls), :tokens (rest tks)}
-
-          [true false]
-          (throw (ex-info "expected closing brace '}'", {:parse-error true}))
-
-          [false true]
-          {:statement (Block. (conj decls stmt)), :tokens (rest tks)}
-
-          [false false]
-          (recur (declaration tks) (conj decls stmt))))
+      (parse-block tokens)
 
       (let [{expr :expr, tks :tokens} (expression tokens)]
         (when-not (seq expr)
@@ -330,23 +334,56 @@
           (throw (ex-info "missing semicolon after expression"
                           {:parse-error true, :tokens (drop-current-statement tks)})))))))
 
+(defn- parse-fun
+  [tokens]
+  (let [tokens (consume! tokens ::s/fun "expected function declaration")
+        fun-name (if (= ::s/identifier (:type (first tokens)))
+                   (first tokens)
+                   (throw (ex-info "expected identifier for function declaration"
+                                   {:parse-error true, :tokens (drop-current-statement tokens)})))
+        tokens (consume! (rest tokens) ::s/left-paren "missing expected '(' in function declaration")
+        [args tokens] (loop [tokens tokens
+                             args []]
+                        (let [t (first tokens)]
+                          (case (:type t)
+                            ::s/right-paren
+                            [args (rest tokens)]
+
+                            ::s/identifier
+                            (recur (rest tokens) (conj args t))
+
+                            (throw (ex-info (str "unexpected token in function declaration '" (:lexeme t) "'")
+                                            {:parse-error true, :tokens (drop-current-statement tokens)})))))
+        [stmts tokens] (if-let [block (parse-block tokens)]
+                         [(-> block
+                              :statement
+                              :declarations)
+                          (:tokens block)]
+                         (throw (ex-info "missing expected block in function declaration"
+                                         {:parse-error true, :tokens (drop-current-statement tokens)})))]
+    {:statement (FunStatement. fun-name args stmts), :tokens tokens}))
+
 (defn- declaration
   [tokens]
-  (if (= ::s/var (:type (first tokens)))
+  (case (:type (first tokens))
+    ::s/var
     (let [[maybe-identifier maybe-oper & rest-tokens] (rest tokens)]
       (case (mapv :type [maybe-identifier maybe-oper])
-            [::s/identifier ::s/equal]
-            (let [{expr :expr, tks :tokens} (expression rest-tokens)]
-              (if (= ::s/semicolon (:type (first tks)))
-                {:statement (VarStatement. maybe-identifier expr), :tokens (rest tks)}
-                (throw (ex-info "missing semicolon after expression"
-                                {:parse-error true, :tokens (drop-current-statement tks)}))))
+        [::s/identifier ::s/equal]
+        (let [{expr :expr, tks :tokens} (expression rest-tokens)]
+          (if (= ::s/semicolon (:type (first tks)))
+            {:statement (VarStatement. maybe-identifier expr), :tokens (rest tks)}
+            (throw (ex-info "missing semicolon after expression"
+                            {:parse-error true, :tokens (drop-current-statement tks)}))))
 
-            [::s/identifier ::s/semicolon]
-            {:statement (VarStatement. maybe-identifier (LiteralExpression. nil)), :tokens rest-tokens}
+        [::s/identifier ::s/semicolon]
+        {:statement (VarStatement. maybe-identifier (LiteralExpression. nil)), :tokens rest-tokens}
 
-            (throw (ex-info "var declaration must be of the form 'var IDENTIFIER;' or 'var IDENTIFIER = EXPR;'"
-                            {:parse-error true, :tokens (drop-current-statement rest-tokens)}))))
+        (throw (ex-info "var declaration must be of the form 'var IDENTIFIER;' or 'var IDENTIFIER = EXPR;'"
+                        {:parse-error true, :tokens (drop-current-statement rest-tokens)}))))
+    ::s/fun
+    (parse-fun tokens)
+
     (statement tokens)))
 
 (defn parse

@@ -231,6 +231,26 @@ print \"after loop\";")))
   (is (= "false\n" (run->str "print nil or false and 10;"))))
   (is (= "10.0\n" (run->str "print 42 and false or 10;")))
 
+(deftest call-non-fun-test
+  (is false))
+
+(deftest fun-called-with-correct-arity-test
+  (is (= "hello, test!" (run->str "
+fun greet(x) {
+  print \"hello, \" + x;
+}
+
+greet(\"test\");"))))
+
+(deftest fun-called-with-incorrect-arity-test
+  (is false))
+
+(deftest return-statement-test
+  (is false))
+
+(deftest closure-test
+  (is false))
+
 (deftest runtime-errors-test
   (is (thrown-with-msg? clojure.lang.ExceptionInfo #"must be numbers" (run->str "print 1 * false;"))))
 
@@ -239,6 +259,3 @@ print \"after loop\";")))
 
 (deftest run-lexer-error-test
   (is (thrown-with-msg? clojure.lang.ExceptionInfo #"error parsing input" (run->str "print \"foo;"))))
-
-(deftest synchronise-after-parse-error-test
-  (is false))

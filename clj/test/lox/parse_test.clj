@@ -6,7 +6,7 @@
             ExpressionStatement VarStatement GroupingExpression
             BinaryExpression VariableExpression UnaryExpression
             LiteralExpression IfStatement LogicalExpression
-            WhileStatement]))
+            WhileStatement FunStatement]))
 
 (defn- parse
   [s]
@@ -173,6 +173,15 @@ i = i + 1;
   (is (= (UnaryExpression. (s/token ::s/bang "!" nil 1)
                      (UnaryExpression. (s/token ::s/bang "!" nil 1)
                                  (LiteralExpression. true))) (parse "!!true"))))
+
+(deftest parse-fun-decl-test
+  (is (= [(FunStatement. (ident->token "greet")
+                         [(ident->token "x")]
+                         [(PrintStatement. (BinaryExpression.
+                                            (s/token ::s/plus "+" nil 1)
+                                            (LiteralExpression. "hello, ")
+                                            (VariableExpression. (ident->token "x"))))])]
+         (parse "fun greet(x) { print \"hello, \" + x; }"))))
 
 (deftest parse-factor-test
   (is (= (BinaryExpression. (s/token ::s/star "*" nil 1)
