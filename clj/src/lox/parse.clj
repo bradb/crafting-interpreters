@@ -283,7 +283,7 @@
 (defn- parse-block
   [tokens]
   (when-let [tokens (consume! tokens ::s/left-brace "missing opening '{' for block")]
-    (loop [{stmt :statement, tks :tokens} (declaration (rest tokens))
+    (loop [{stmt :statement, tks :tokens} (declaration tokens)
            decls []]
       (case [(nil? stmt) (= ::s/right-brace (:type (first tks)))]
         [true true]
